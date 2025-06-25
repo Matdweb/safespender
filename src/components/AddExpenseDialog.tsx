@@ -63,8 +63,8 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-finance-orange/10 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-finance-orange rotate-180" />
+            <div className="w-8 h-8 bg-finance-slate-100 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-finance-slate-600 rotate-180" />
             </div>
             Add Expense
           </DialogTitle>
@@ -150,7 +150,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
             <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-finance-orange hover:bg-finance-red">
+            <Button type="submit" className="flex-1 bg-finance-slate-600 hover:bg-finance-slate-700 text-white">
               Add Expense
             </Button>
           </div>

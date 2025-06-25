@@ -22,7 +22,7 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
       case 'income':
         return <DollarSign className="w-4 h-4 text-finance-teal" />;
       case 'expense':
-        return <TrendingUp className="w-4 h-4 text-finance-orange rotate-180" />;
+        return <TrendingUp className="w-4 h-4 text-finance-slate-600 rotate-180" />;
       case 'savings':
         return <Target className="w-4 h-4 text-finance-green" />;
       default:
@@ -35,11 +35,11 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
       case 'income':
         return 'border-l-finance-teal bg-finance-teal/5';
       case 'expense':
-        return 'border-l-finance-orange bg-finance-orange/5';
+        return 'border-l-finance-slate-400 bg-finance-slate-50';
       case 'savings':
         return 'border-l-finance-green bg-finance-green/5';
       default:
-        return 'border-l-gray-300 bg-gray-50';
+        return 'border-l-finance-slate-300 bg-finance-slate-50';
     }
   };
 
@@ -77,7 +77,7 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
               <div className="text-right">
                 <p className={`font-semibold text-sm ${
                   event.type === 'income' ? 'text-finance-teal' : 
-                  event.type === 'expense' ? 'text-finance-orange' : 
+                  event.type === 'expense' ? 'text-finance-slate-600' : 
                   'text-finance-green'
                 }`}>
                   {event.type === 'income' ? '+' : '-'}${event.amount.toLocaleString()}

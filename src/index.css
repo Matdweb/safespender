@@ -111,6 +111,6 @@
   }
   
   .expense-gradient {
-    @apply bg-gradient-to-r from-finance-orange to-finance-red;
+    @apply bg-gradient-to-r from-finance-slate-400 to-finance-slate-600;
   }
 }
