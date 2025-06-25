@@ -16,13 +16,13 @@ const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
         <Logo size="md" />
         
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary transition-colors">
+          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary dark:hover:text-primary transition-colors">
             Dashboard
           </a>
-          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary transition-colors">
+          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary dark:hover:text-primary transition-colors">
             Calendar
           </a>
-          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary transition-colors">
+          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary dark:hover:text-primary transition-colors">
             Goals
           </a>
         </nav>
