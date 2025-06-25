@@ -44,7 +44,7 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 transaction.type === 'income' 
                   ? 'bg-primary/10 text-primary' 
-                  : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
+                  : 'bg-destructive/5 text-destructive'
               }`}>
                 {transaction.type === 'income' ? (
                   <TrendingUp className="w-4 h-4" />

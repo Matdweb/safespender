@@ -35,7 +35,7 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
       case 'income':
         return 'border-l-finance-primary bg-finance-primary/5';
       case 'expense':
-        return 'border-l-finance-neutral-400 bg-finance-neutral-50 dark:bg-finance-neutral-900';
+        return 'border-l-destructive bg-destructive/5';
       case 'savings':
         return 'border-l-finance-teal-500 bg-finance-teal-50 dark:bg-finance-teal-700/10';
       default:
@@ -44,7 +44,7 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
   };
 
   return (
-    <Card className="p-6 card-gradient border-subtle">
+    <Card className="p-6 card-border ">
       <div className="flex items-center gap-2 mb-4">
         <Calendar className="w-5 h-5 text-finance-primary" />
         <h3 className="font-semibold">Upcoming Events</h3>

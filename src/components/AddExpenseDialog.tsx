@@ -63,8 +63,8 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-neutral-100 dark:bg-neutral-700 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-neutral-600 dark:text-neutral-400 rotate-180" />
+            <div className="w-8 h-8 bg-destructive/5 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-destructive rotate-180" />
             </div>
             Add Expense
           </DialogTitle>
