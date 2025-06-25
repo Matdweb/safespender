@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
@@ -21,7 +19,7 @@ const Logo = ({ size = 'md', showText = true }: LogoProps) => {
 
   return (
     <div className="flex items-center gap-3">
-      <div className={`${sizeClasses[size]} rounded-2xl bg-gradient-to-br from-finance-teal to-finance-green flex items-center justify-center shadow-lg`}>
+      <div className={`${sizeClasses[size]} rounded-2xl bg-gradient-to-br income-gradient flex items-center justify-center shadow-lg logo`}>
         <span className="text-white font-bold text-sm">$</span>
       </div>
       {showText && (
