@@ -54,8 +54,8 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-finance-primary/10 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-finance-primary" />
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-primary" />
             </div>
             Add Income
           </DialogTitle>
@@ -65,7 +65,7 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle">$</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500">$</span>
               <Input
                 id="amount"
                 type="number"
@@ -138,7 +138,7 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
             <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-finance-primary hover:bg-finance-primary-dark">
+            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90">
               Add Income
             </Button>
           </div>

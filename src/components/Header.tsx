@@ -11,18 +11,18 @@ interface HeaderProps {
 
 const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
   return (
-    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+    <header className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Logo size="md" />
         
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-finance-teal transition-colors">
+          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary transition-colors">
             Dashboard
           </a>
-          <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-finance-teal transition-colors">
+          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary transition-colors">
             Calendar
           </a>
-          <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-finance-teal transition-colors">
+          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary transition-colors">
             Goals
           </a>
         </nav>
