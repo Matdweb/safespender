@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import FreeToSpendCard from '@/components/FreeToSpendCard';
@@ -99,16 +98,16 @@ const Index = () => {
   }, []);
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300`}>
+    <div className={`min-h-screen bg-finance-neutral-50 dark:bg-finance-neutral-950 transition-colors duration-300`}>
       <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
         <div className="animate-slide-up">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-3xl font-bold text-finance-neutral-900 dark:text-finance-neutral-100 mb-2">
             Welcome back! 👋
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-subtle">
             Here's your financial overview for today
           </p>
         </div>
@@ -145,9 +144,9 @@ const Index = () => {
 
         {/* Quick Tip */}
         <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <div className="bg-finance-teal/5 border border-finance-teal/20 rounded-2xl p-6 text-center">
-            <h3 className="font-semibold text-finance-teal-dark mb-2">💡 Smart Tip</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="bg-finance-primary/5 border border-finance-primary/20 rounded-2xl p-6 text-center">
+            <h3 className="font-semibold text-finance-primary-dark mb-2">💡 Smart Tip</h3>
+            <p className="text-sm text-subtle">
               Reserve money for upcoming bills to keep your "Free to Spend" amount accurate. 
               This helps prevent overspending and builds better financial habits.
             </p>

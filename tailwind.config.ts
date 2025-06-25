@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -55,28 +56,15 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// SafeSpender Refined Color System
+				// SafeSpender Modern Color System
 				finance: {
-					// Beautiful greens (keep these)
-					teal: '#14B8A6',
-					'teal-dark': '#0D9488',
-					green: '#10B981',
-					'green-dark': '#059669',
+					// Primary green (brand accent)
+					primary: '#10B981',
+					'primary-dark': '#059669',
+					'primary-light': '#34D399',
 					
-					// Sophisticated grayscale system
-					slate: {
-						50: '#F8FAFC',
-						100: '#F1F5F9',
-						200: '#E2E8F0',
-						300: '#CBD5E1',
-						400: '#94A3B8',
-						500: '#64748B',
-						600: '#475569',
-						700: '#334155',
-						800: '#1E293B',
-						900: '#0F172A',
-					},
-					neutral: {
+					// Sophisticated neutral grays
+					gray: {
 						50: '#FAFAFA',
 						100: '#F5F5F5',
 						200: '#E5E5E5',
@@ -87,6 +75,42 @@ export default {
 						700: '#404040',
 						800: '#262626',
 						900: '#171717',
+						950: '#0A0A0A',
+					},
+					
+					// Warm neutral tones
+					neutral: {
+						50: '#FAFAF9',
+						100: '#F5F5F4',
+						200: '#E7E5E4',
+						300: '#D6D3D1',
+						400: '#A8A29E',
+						500: '#78716C',
+						600: '#57534E',
+						700: '#44403C',
+						800: '#292524',
+						900: '#1C1917',
+						950: '#0C0A09',
+					},
+					
+					// Subtle accent colors
+					teal: {
+						50: '#F0FDFA',
+						500: '#14B8A6',
+						600: '#0D9488',
+						700: '#0F766E',
+					},
+					blue: {
+						50: '#F8FAFC',
+						500: '#64748B',
+						600: '#475569',
+						700: '#334155',
+					},
+					beige: {
+						50: '#FEFDFB',
+						100: '#FBF9F6',
+						200: '#F6F3F0',
+						500: '#A8A29E',
 					}
 				},
 				sidebar: {

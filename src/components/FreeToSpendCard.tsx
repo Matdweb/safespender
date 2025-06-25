@@ -15,7 +15,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
   const isVeryLow = amount < 50;
 
   return (
-    <Card className="p-8 bg-gradient-to-br from-finance-teal to-finance-green text-white shadow-xl hover-lift">
+    <Card className="p-8 income-gradient text-white shadow-lg hover-lift">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-medium text-white/90 mb-2">Free to Spend Today</h2>
@@ -29,7 +29,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
             </div>
           )}
         </div>
-        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+        <div className="w-16 h-16 bg-white/15 rounded-2xl flex items-center justify-center backdrop-blur-sm">
           <TrendingUp className="w-8 h-8" />
         </div>
       </div>

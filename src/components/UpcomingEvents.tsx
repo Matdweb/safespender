@@ -20,11 +20,11 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'income':
-        return <DollarSign className="w-4 h-4 text-finance-teal" />;
+        return <DollarSign className="w-4 h-4 text-finance-primary" />;
       case 'expense':
-        return <TrendingUp className="w-4 h-4 text-finance-slate-600 rotate-180" />;
+        return <TrendingUp className="w-4 h-4 text-finance-neutral-600 dark:text-finance-neutral-400 rotate-180" />;
       case 'savings':
-        return <Target className="w-4 h-4 text-finance-green" />;
+        return <Target className="w-4 h-4 text-finance-primary" />;
       default:
         return <Calendar className="w-4 h-4" />;
     }
@@ -33,26 +33,26 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
   const getEventColor = (type: string) => {
     switch (type) {
       case 'income':
-        return 'border-l-finance-teal bg-finance-teal/5';
+        return 'border-l-finance-primary bg-finance-primary/5';
       case 'expense':
-        return 'border-l-finance-slate-400 bg-finance-slate-50';
+        return 'border-l-finance-neutral-400 bg-finance-neutral-50 dark:bg-finance-neutral-900';
       case 'savings':
-        return 'border-l-finance-green bg-finance-green/5';
+        return 'border-l-finance-teal-500 bg-finance-teal-50 dark:bg-finance-teal-700/10';
       default:
-        return 'border-l-finance-slate-300 bg-finance-slate-50';
+        return 'border-l-finance-neutral-300 bg-finance-neutral-50 dark:bg-finance-neutral-900';
     }
   };
 
   return (
-    <Card className="p-6 card-gradient">
+    <Card className="p-6 card-gradient border-subtle">
       <div className="flex items-center gap-2 mb-4">
-        <Calendar className="w-5 h-5 text-finance-teal" />
+        <Calendar className="w-5 h-5 text-finance-primary" />
         <h3 className="font-semibold">Upcoming Events</h3>
       </div>
 
       <div className="space-y-3">
         {events.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
+          <p className="text-subtle text-center py-8">
             No upcoming events. Add some income or expenses to get started!
           </p>
         ) : (
@@ -65,7 +65,7 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
                 {getEventIcon(event.type)}
                 <div>
                   <p className="font-medium text-sm">{event.title}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-subtle">
                     {new Date(event.date).toLocaleDateString('en-US', { 
                       month: 'short', 
                       day: 'numeric' 
@@ -76,9 +76,9 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
               </div>
               <div className="text-right">
                 <p className={`font-semibold text-sm ${
-                  event.type === 'income' ? 'text-finance-teal' : 
-                  event.type === 'expense' ? 'text-finance-slate-600' : 
-                  'text-finance-green'
+                  event.type === 'income' ? 'text-finance-primary' : 
+                  event.type === 'expense' ? 'text-finance-neutral-600 dark:text-finance-neutral-400' : 
+                  'text-finance-teal-600 dark:text-finance-teal-500'
                 }`}>
                   {event.type === 'income' ? '+' : '-'}${event.amount.toLocaleString()}
                 </p>

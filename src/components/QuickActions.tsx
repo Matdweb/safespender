@@ -14,50 +14,50 @@ interface QuickActionsProps {
 const QuickActions = ({ onAddIncome, onAddExpense, onViewCalendar, onViewGoals }: QuickActionsProps) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Card className="p-4 hover-lift cursor-pointer card-gradient" onClick={onAddIncome}>
+      <Card className="p-4 hover-lift cursor-pointer card-gradient border-subtle" onClick={onAddIncome}>
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="w-12 h-12 bg-finance-teal/10 rounded-xl flex items-center justify-center">
-            <Plus className="w-6 h-6 text-finance-teal" />
+          <div className="w-12 h-12 bg-finance-primary/10 rounded-xl flex items-center justify-center">
+            <Plus className="w-6 h-6 text-finance-primary" />
           </div>
           <div>
             <h3 className="font-semibold text-sm">Add Income</h3>
-            <p className="text-xs text-muted-foreground">Record earnings</p>
+            <p className="text-xs text-subtle">Record earnings</p>
           </div>
         </div>
       </Card>
 
-      <Card className="p-4 hover-lift cursor-pointer card-gradient" onClick={onAddExpense}>
+      <Card className="p-4 hover-lift cursor-pointer card-gradient border-subtle" onClick={onAddExpense}>
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="w-12 h-12 bg-finance-slate-100 rounded-xl flex items-center justify-center">
-            <TrendingUp className="w-6 h-6 text-finance-slate-600 rotate-180" />
+          <div className="w-12 h-12 bg-finance-neutral-100 dark:bg-finance-neutral-800 rounded-xl flex items-center justify-center">
+            <TrendingUp className="w-6 h-6 text-finance-neutral-600 dark:text-finance-neutral-400 rotate-180" />
           </div>
           <div>
             <h3 className="font-semibold text-sm">Add Expense</h3>
-            <p className="text-xs text-muted-foreground">Track spending</p>
+            <p className="text-xs text-subtle">Track spending</p>
           </div>
         </div>
       </Card>
 
-      <Card className="p-4 hover-lift cursor-pointer card-gradient" onClick={onViewCalendar}>
+      <Card className="p-4 hover-lift cursor-pointer card-gradient border-subtle" onClick={onViewCalendar}>
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="w-12 h-12 bg-finance-slate-100 rounded-xl flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-finance-slate-600" />
+          <div className="w-12 h-12 bg-finance-teal-50 dark:bg-finance-teal-700/20 rounded-xl flex items-center justify-center">
+            <Calendar className="w-6 h-6 text-finance-teal-600 dark:text-finance-teal-500" />
           </div>
           <div>
             <h3 className="font-semibold text-sm">Calendar</h3>
-            <p className="text-xs text-muted-foreground">Plan ahead</p>
+            <p className="text-xs text-subtle">Plan ahead</p>
           </div>
         </div>
       </Card>
 
-      <Card className="p-4 hover-lift cursor-pointer card-gradient" onClick={onViewGoals}>
+      <Card className="p-4 hover-lift cursor-pointer card-gradient border-subtle" onClick={onViewGoals}>
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="w-12 h-12 bg-finance-green/10 rounded-xl flex items-center justify-center">
-            <Target className="w-6 h-6 text-finance-green" />
+          <div className="w-12 h-12 bg-finance-primary/10 rounded-xl flex items-center justify-center">
+            <Target className="w-6 h-6 text-finance-primary" />
           </div>
           <div>
             <h3 className="font-semibold text-sm">Goals</h3>
-            <p className="text-xs text-muted-foreground">Track progress</p>
+            <p className="text-xs text-subtle">Track progress</p>
           </div>
         </div>
       </Card>
