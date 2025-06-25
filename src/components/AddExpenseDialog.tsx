@@ -63,8 +63,8 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-finance-neutral-100 dark:bg-finance-neutral-800 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-finance-neutral-600 dark:text-finance-neutral-400 rotate-180" />
+            <div className="w-8 h-8 bg-neutral-100 dark:bg-neutral-700 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-neutral-600 dark:text-neutral-400 rotate-180" />
             </div>
             Add Expense
           </DialogTitle>
@@ -74,7 +74,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle">$</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500">$</span>
               <Input
                 id="amount"
                 type="number"
@@ -150,7 +150,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
             <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-finance-neutral-700 hover:bg-finance-neutral-800 text-white dark:bg-finance-neutral-600 dark:hover:bg-finance-neutral-700">
+            <Button type="submit" className="flex-1 bg-neutral-700 hover:bg-neutral-800 text-white dark:bg-neutral-600 dark:hover:bg-neutral-700">
               Add Expense
             </Button>
           </div>

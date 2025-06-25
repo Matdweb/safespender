@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SafeSpender Modern Design System */
+/* SafeSpender Clean Design System */
 
 @layer base {
   :root {
@@ -48,41 +48,41 @@
   }
 
   .dark {
-    --background: 10 10 9;
+    --background: 23 23 23;
     --foreground: 250 250 249;
 
-    --card: 28 25 23;
+    --card: 38 38 38;
     --card-foreground: 250 250 249;
 
-    --popover: 28 25 23;
+    --popover: 38 38 38;
     --popover-foreground: 250 250 249;
 
     --primary: 16 185 129;
     --primary-foreground: 255 255 255;
 
-    --secondary: 41 37 36;
+    --secondary: 64 64 64;
     --secondary-foreground: 214 211 209;
 
-    --muted: 41 37 36;
-    --muted-foreground: 168 162 158;
+    --muted: 64 64 64;
+    --muted-foreground: 163 163 163;
 
-    --accent: 41 37 36;
+    --accent: 64 64 64;
     --accent-foreground: 214 211 209;
 
     --destructive: 239 68 68;
     --destructive-foreground: 250 250 249;
 
-    --border: 41 37 36;
-    --input: 41 37 36;
+    --border: 64 64 64;
+    --input: 64 64 64;
     --ring: 16 185 129;
 
-    --sidebar-background: 28 25 23;
+    --sidebar-background: 38 38 38;
     --sidebar-foreground: 250 250 249;
     --sidebar-primary: 16 185 129;
     --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 41 37 36;
+    --sidebar-accent: 64 64 64;
     --sidebar-accent-foreground: 214 211 209;
-    --sidebar-border: 41 37 36;
+    --sidebar-border: 64 64 64;
     --sidebar-ring: 16 185 129;
   }
 }
@@ -100,29 +100,5 @@
 @layer components {
   .hover-lift {
     @apply transition-all duration-200 hover:scale-[1.02] hover:shadow-sm;
-  }
-  
-  .card-gradient {
-    @apply bg-gradient-to-br from-card to-finance-neutral-50 dark:from-card dark:to-finance-neutral-900;
-  }
-  
-  .income-gradient {
-    @apply bg-gradient-to-r from-finance-primary to-finance-primary-light;
-  }
-  
-  .expense-gradient {
-    @apply bg-gradient-to-r from-finance-neutral-100 to-finance-neutral-200 dark:from-finance-neutral-800 dark:to-finance-neutral-700;
-  }
-  
-  .surface-elevated {
-    @apply bg-finance-neutral-50 dark:bg-finance-neutral-900;
-  }
-  
-  .text-subtle {
-    @apply text-finance-neutral-600 dark:text-finance-neutral-400;
-  }
-  
-  .border-subtle {
-    @apply border-finance-neutral-200 dark:border-finance-neutral-700;
   }
 }
