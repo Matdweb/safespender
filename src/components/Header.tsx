@@ -35,9 +35,14 @@ const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
           >
             Calendar
           </Link>
-          <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link 
+            to="/goals" 
+            className={`text-muted-foreground hover:text-primary transition-colors ${
+              location.pathname === '/goals' ? 'text-primary font-medium' : ''
+            }`}
+          >
             Goals
-          </a>
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">

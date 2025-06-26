@@ -18,6 +18,10 @@ const QuickActions = ({ onAddIncome, onAddExpense, onViewCalendar, onViewGoals }
     navigate('/calendar');
   };
 
+  const handleGoalsClick = () => {
+    navigate('/goals');
+  };
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={onAddIncome}>
@@ -46,7 +50,7 @@ const QuickActions = ({ onAddIncome, onAddExpense, onViewCalendar, onViewGoals }
 
       <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={handleCalendarClick}>
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center">
             <Calendar className="w-6 h-6 text-blue-600" />
           </div>
           <div>
@@ -56,7 +60,7 @@ const QuickActions = ({ onAddIncome, onAddExpense, onViewCalendar, onViewGoals }
         </div>
       </Card>
 
-      <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={onViewGoals}>
+      <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={handleGoalsClick}>
         <div className="flex flex-col items-center text-center gap-3">
           <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
             <Target className="w-6 h-6 text-primary" />
