@@ -3,6 +3,7 @@ import React from 'react';
 import Logo from './Logo';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
 
 interface HeaderProps {
   darkMode: boolean;
@@ -10,19 +11,31 @@ interface HeaderProps {
 }
 
 const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
+  const location = useLocation();
+
   return (
-    <header className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-50">
+    <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Logo size="md" />
         
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary dark:hover:text-primary transition-colors">
+          <Link 
+            to="/" 
+            className={`text-muted-foreground hover:text-primary transition-colors ${
+              location.pathname === '/' ? 'text-primary font-medium' : ''
+            }`}
+          >
             Dashboard
-          </a>
-          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary dark:hover:text-primary transition-colors">
+          </Link>
+          <Link 
+            to="/calendar" 
+            className={`text-muted-foreground hover:text-primary transition-colors ${
+              location.pathname === '/calendar' ? 'text-primary font-medium' : ''
+            }`}
+          >
             Calendar
-          </a>
-          <a href="#" className="text-neutral-600 dark:text-neutral-300 hover:text-primary dark:hover:text-primary transition-colors">
+          </Link>
+          <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
             Goals
           </a>
         </nav>
