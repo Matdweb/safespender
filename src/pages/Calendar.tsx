@@ -6,6 +6,7 @@ import CalendarHeader from '@/components/calendar/CalendarHeader';
 import AddItemModal from '@/components/calendar/AddItemModal';
 import ViewDayModal from '@/components/calendar/ViewDayModal';
 import { CalendarItem } from '@/types/calendar';
+import { useFinancial } from '@/contexts/FinancialContext';
 
 const Calendar = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -13,7 +14,52 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([]);
+
+  const { 
+    transactions, 
+    addTransaction, 
+    deleteTransaction, 
+    generateRecurringTransactions 
+  } = useFinancial();
+
+  // Convert transactions to calendar items and include recurring ones
+  const calendarItems: CalendarItem[] = React.useMemo(() => {
+    // Get base transactions
+    const baseItems = transactions.map(t => ({
+      id: t.id,
+      type: t.type as 'income' | 'expense',
+      title: t.description,
+      amount: t.amount,
+      date: t.date,
+      category: t.category,
+      description: t.description,
+      recurring: t.recurring ? {
+        frequency: t.recurring.type === 'biweekly' ? 'monthly' as const : t.recurring.type,
+        interval: t.recurring.interval
+      } : undefined
+    }));
+
+    // Generate recurring transactions for the current month and next month
+    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const endOfNextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
+    const recurringTransactions = generateRecurringTransactions(startOfMonth, endOfNextMonth);
+    
+    const recurringItems = recurringTransactions.map(t => ({
+      id: t.id,
+      type: t.type as 'income' | 'expense',
+      title: t.description,
+      amount: t.amount,
+      date: t.date,
+      category: t.category,
+      description: t.description,
+      recurring: {
+        frequency: t.recurring?.type === 'biweekly' ? 'monthly' as const : t.recurring?.type || 'monthly' as const,
+        interval: t.recurring?.interval || 1
+      }
+    }));
+
+    return [...baseItems, ...recurringItems];
+  }, [transactions, currentDate, generateRecurringTransactions]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -34,15 +80,23 @@ const Calendar = () => {
   };
 
   const handleAddItem = (item: Omit<CalendarItem, 'id'>) => {
-    const newItem: CalendarItem = {
-      ...item,
-      id: Date.now().toString(),
-    };
-    setCalendarItems(prev => [...prev, newItem]);
+    addTransaction({
+      type: item.type,
+      amount: item.amount,
+      description: item.title,
+      date: item.date,
+      category: item.category,
+      recurring: item.recurring ? {
+        type: item.recurring.frequency === 'weekly' ? 'weekly' : 
+              item.recurring.frequency === 'yearly' ? 'monthly' :
+              item.recurring.frequency,
+        interval: item.recurring.interval
+      } : undefined
+    });
   };
 
   const handleDeleteItem = (id: string) => {
-    setCalendarItems(prev => prev.filter(item => item.id !== id));
+    deleteTransaction(id);
   };
 
   const getItemsForDate = (date: Date) => {

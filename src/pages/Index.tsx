@@ -8,86 +8,56 @@ import SavingsGoals from '@/components/SavingsGoals';
 import TransactionsList from '@/components/TransactionsList';
 import AddIncomeDialog from '@/components/AddIncomeDialog';
 import AddExpenseDialog from '@/components/AddExpenseDialog';
+import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
 import { useToast } from '@/hooks/use-toast';
-
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  date: string;
-  category?: string;
-  isReserved?: boolean;
-}
+import { useFinancial } from '@/contexts/FinancialContext';
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { toast } = useToast();
 
-  // Calculate balances based on transactions
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-  
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-  
-  const reservedExpenses = transactions
-    .filter(t => t.type === 'expense' && t.isReserved)
-    .reduce((sum, t) => sum + t.amount, 0);
+  const {
+    transactions,
+    goals,
+    addTransaction,
+    deleteTransaction,
+    getTotalIncome,
+    getTotalExpenses,
+    getReservedExpenses,
+    getFreeToSpend,
+    generateRecurringTransactions,
+    isFirstTimeUser,
+    completeOnboarding
+  } = useFinancial();
 
-  const balance = totalIncome - totalExpenses;
-  const assignedSavings = 300; // Static for now
-  const freeToSpend = balance - assignedSavings;
-
-  // Sample data for upcoming events and savings goals
-  const [upcomingEvents] = useState([
-    {
-      id: '1',
-      type: 'income' as const,
-      title: 'Freelance Payment',
-      amount: 1200,
-      date: '2024-06-28',
-      recurring: false
-    },
-    {
-      id: '2',
-      type: 'expense' as const,
-      title: 'Rent',
-      amount: 1200,
-      date: '2024-07-01',
-      recurring: true
-    },
-    {
-      id: '3',
-      type: 'savings' as const,
-      title: 'Emergency Fund',
-      amount: 200,
-      date: '2024-06-30',
-      recurring: true
-    }
-  ]);
-
-  const [savingsGoals] = useState([
-    {
-      id: '1',
-      title: 'Emergency Fund',
-      targetAmount: 5000,
-      currentAmount: 2800,
-      deadline: '2024-12-31'
-    },
-    {
-      id: '2',
-      title: 'Vacation',
-      targetAmount: 1500,
-      currentAmount: 450,
-      deadline: '2024-09-01'
-    }
-  ]);
+  // Generate upcoming events from recurring transactions
+  const upcomingEvents = React.useMemo(() => {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    const recurringTransactions = generateRecurringTransactions(now, nextMonth);
+    
+    return [
+      ...recurringTransactions.slice(0, 5).map(t => ({
+        id: t.id,
+        type: t.type as 'income' | 'expense',
+        title: t.description,
+        amount: t.amount,
+        date: t.date,
+        recurring: true
+      })),
+      // Add savings goals as upcoming events
+      ...goals.filter(g => g.recurringContribution > 0).map(goal => ({
+        id: `goal-${goal.id}`,
+        type: 'savings' as const,
+        title: `${goal.icon} ${goal.name} Contribution`,
+        amount: goal.recurringContribution,
+        date: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        recurring: true
+      }))
+    ];
+  }, [transactions, goals, generateRecurringTransactions]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -95,16 +65,18 @@ const Index = () => {
   };
 
   const handleAddIncome = (income: any) => {
-    const newTransaction: Transaction = {
-      id: Date.now().toString(),
+    addTransaction({
       type: 'income',
       amount: income.amount,
       description: income.description,
       date: income.date,
-    };
+      recurring: income.frequency !== 'one-time' ? {
+        type: income.frequency === 'biweekly' ? 'biweekly' : 
+              income.frequency === 'weekly' ? 'weekly' : 'monthly',
+        interval: 1
+      } : undefined
+    });
     
-    setTransactions(prev => [newTransaction, ...prev]);
-    console.log('Adding income:', income);
     toast({
       title: "Income Added!",
       description: `$${income.amount.toLocaleString()} added to your account`,
@@ -112,18 +84,19 @@ const Index = () => {
   };
 
   const handleAddExpense = (expense: any) => {
-    const newTransaction: Transaction = {
-      id: Date.now().toString(),
+    addTransaction({
       type: 'expense',
       amount: expense.amount,
       description: expense.description,
       date: expense.date,
       category: expense.category,
       isReserved: expense.isReserved,
-    };
+      recurring: expense.isRecurring ? {
+        type: 'monthly',
+        interval: 1
+      } : undefined
+    });
     
-    setTransactions(prev => [newTransaction, ...prev]);
-    console.log('Adding expense:', expense);
     toast({
       title: "Expense Recorded",
       description: `$${expense.amount.toLocaleString()} ${expense.category} expense added`,
@@ -131,7 +104,7 @@ const Index = () => {
   };
 
   const handleDeleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+    deleteTransaction(id);
     toast({
       title: "Transaction Deleted",
       description: "Transaction has been removed",
@@ -140,8 +113,8 @@ const Index = () => {
 
   const handleAddGoal = () => {
     toast({
-      title: "Coming Soon!",
-      description: "Goal creation will be available in the next update",
+      title: "Use the Goals page!",
+      description: "Visit the Goals section to create and manage your savings goals",
     });
   };
 
@@ -167,10 +140,10 @@ const Index = () => {
         {/* Free to Spend Card - Hero */}
         <div className="animate-scale-in">
           <FreeToSpendCard
-            amount={freeToSpend}
-            balance={balance}
-            reservedExpenses={reservedExpenses}
-            assignedSavings={assignedSavings}
+            amount={getFreeToSpend()}
+            balance={getTotalIncome() - getTotalExpenses()}
+            reservedExpenses={getReservedExpenses()}
+            assignedSavings={goals.reduce((sum, goal) => sum + goal.currentAmount, 0)}
           />
         </div>
 
@@ -179,8 +152,8 @@ const Index = () => {
           <QuickActions
             onAddIncome={() => setShowIncomeDialog(true)}
             onAddExpense={() => setShowExpenseDialog(true)}
-            onViewCalendar={() => toast({ title: "Coming Soon!", description: "Calendar view is in development" })}
-            onViewGoals={() => toast({ title: "Coming Soon!", description: "Goals page is in development" })}
+            onViewCalendar={() => toast({ title: "Calendar", description: "Click the Calendar link in the header" })}
+            onViewGoals={() => toast({ title: "Goals", description: "Click the Goals link in the header" })}
           />
         </div>
 
@@ -198,7 +171,7 @@ const Index = () => {
             <UpcomingEvents events={upcomingEvents} />
           </div>
           <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <SavingsGoals goals={savingsGoals} onAddGoal={handleAddGoal} />
+            <SavingsGoals goals={goals} onAddGoal={handleAddGoal} />
           </div>
         </div>
 
@@ -225,6 +198,12 @@ const Index = () => {
         open={showExpenseDialog}
         onOpenChange={setShowExpenseDialog}
         onAddExpense={handleAddExpense}
+      />
+
+      {/* Onboarding Flow */}
+      <OnboardingFlow
+        open={isFirstTimeUser}
+        onComplete={completeOnboarding}
       />
     </div>
   );

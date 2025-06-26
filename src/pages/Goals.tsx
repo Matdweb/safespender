@@ -5,66 +5,36 @@ import GoalCard from '@/components/goals/GoalCard';
 import AddGoalModal from '@/components/goals/AddGoalModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Target } from 'lucide-react';
-
-export interface Goal {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  recurringContribution: number;
-  contributionFrequency: 'weekly' | 'monthly';
-  icon?: string;
-  createdAt: string;
-}
+import { useFinancial } from '@/contexts/FinancialContext';
 
 const Goals = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: '1',
-      name: 'Emergency Fund',
-      targetAmount: 5000,
-      currentAmount: 2800,
-      recurringContribution: 200,
-      contributionFrequency: 'monthly',
-      icon: '🛡️',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      name: 'Vacation Fund',
-      targetAmount: 3000,
-      currentAmount: 750,
-      recurringContribution: 150,
-      contributionFrequency: 'monthly',
-      icon: '🏖️',
-      createdAt: '2024-02-01'
-    }
-  ]);
   const [showAddModal, setShowAddModal] = useState(false);
+  
+  const { goals, addGoal, updateGoal, deleteGoal } = useFinancial();
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle('dark');
   };
 
-  const handleAddGoal = (newGoal: Omit<Goal, 'id' | 'createdAt'>) => {
-    const goal: Goal = {
-      ...newGoal,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
-    setGoals(prev => [...prev, goal]);
+  const handleAddGoal = (newGoal: any) => {
+    addGoal({
+      name: newGoal.name,
+      targetAmount: newGoal.targetAmount,
+      currentAmount: newGoal.currentAmount || 0,
+      recurringContribution: newGoal.recurringContribution || 0,
+      contributionFrequency: newGoal.contributionFrequency || 'monthly',
+      icon: newGoal.icon || '💰'
+    });
   };
 
-  const handleUpdateGoal = (updatedGoal: Goal) => {
-    setGoals(prev => prev.map(goal => 
-      goal.id === updatedGoal.id ? updatedGoal : goal
-    ));
+  const handleUpdateGoal = (updatedGoal: any) => {
+    updateGoal(updatedGoal.id, updatedGoal);
   };
 
   const handleDeleteGoal = (goalId: string) => {
-    setGoals(prev => prev.filter(goal => goal.id !== goalId));
+    deleteGoal(goalId);
   };
 
   return (
