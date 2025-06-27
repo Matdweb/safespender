@@ -18,7 +18,7 @@ const Logo = ({ size = 'md', showText = true }: LogoProps) => {
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex justify-center items-center gap-3">
       <div className={`${sizeClasses[size]} rounded-2xl bg-gradient-to-br income-gradient flex items-center justify-center shadow-lg logo`}>
         <span className="text-white font-bold text-sm">$</span>
       </div>

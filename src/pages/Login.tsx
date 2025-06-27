@@ -18,28 +18,28 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
-    
+
     if (!email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email';
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     try {
       await login(email, password);
       toast({
@@ -73,7 +73,6 @@ const Login = () => {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8 animate-fade-in">
-          <Logo size="lg" />
           <h1 className="text-2xl font-bold text-foreground mt-4 mb-2">
             Welcome Back
           </h1>
@@ -81,7 +80,6 @@ const Login = () => {
             Let's get your money under control
           </p>
         </div>
-
         {/* Login Card */}
         <Card className="animate-scale-in bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
           <CardHeader className="space-y-1 pb-4">
@@ -101,9 +99,8 @@ const Login = () => {
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`pl-10 transition-all duration-200 ${
-                      errors.email ? 'border-destructive focus:border-destructive' : ''
-                    }`}
+                    className={`pl-10 transition-all duration-200 ${errors.email ? 'border-destructive focus:border-destructive' : ''
+                      }`}
                   />
                 </div>
                 {errors.email && (
@@ -120,9 +117,8 @@ const Login = () => {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`pl-10 pr-10 transition-all duration-200 ${
-                      errors.password ? 'border-destructive focus:border-destructive' : ''
-                    }`}
+                    className={`pl-10 pr-10 transition-all duration-200 ${errors.password ? 'border-destructive focus:border-destructive' : ''
+                      }`}
                   />
                   <button
                     type="button"
@@ -176,6 +172,12 @@ const Login = () => {
               </p>
             </div>
           </CardContent>
+        </Card>
+        <Card className="animate-scale-in bg-card/80 backdrop-blur-sm border-border/50 shadow-lg mt-4">
+          {/* Logo */}
+          <div className="text-center py-4 mb-8 animate-fade-in">
+            <Logo size="lg" />
+          </div>
         </Card>
       </div>
     </div>
