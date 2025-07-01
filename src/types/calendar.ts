@@ -1,7 +1,7 @@
 
 export interface CalendarItem {
   id: string;
-  type: 'income' | 'expense' | 'transfer';
+  type: 'income' | 'expense';
   title: string;
   amount: number;
   date: string;

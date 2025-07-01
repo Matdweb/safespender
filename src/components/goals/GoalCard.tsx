@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Edit, Trash2, TrendingUp } from 'lucide-react';
 import EditGoalModal from './EditGoalModal';
-import { Goal } from '@/pages/Goals';
+import { Goal } from '@/contexts/FinancialContext';
 
 interface GoalCardProps {
   goal: Goal;

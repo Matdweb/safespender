@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CalendarItem } from '@/types/calendar';
-import { DollarSign, TrendingDown, ArrowUpCircle, Plus, Trash2 } from 'lucide-react';
+import { DollarSign, TrendingDown, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -34,8 +34,6 @@ const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, o
         return <DollarSign className="w-4 h-4 text-primary" />;
       case 'expense':
         return <TrendingDown className="w-4 h-4 text-destructive" />;
-      case 'transfer':
-        return <ArrowUpCircle className="w-4 h-4 text-blue-600" />;
       default:
         return null;
     }
@@ -47,8 +45,6 @@ const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, o
         return 'text-primary';
       case 'expense':
         return 'text-destructive';
-      case 'transfer':
-        return 'text-blue-600';
       default:
         return 'text-foreground';
     }
@@ -56,8 +52,7 @@ const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, o
 
   const totalIncome = items.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
   const totalExpenses = items.filter(item => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
-  const totalTransfers = items.filter(item => item.type === 'transfer').reduce((sum, item) => sum + item.amount, 0);
-  const netFlow = totalIncome - totalExpenses - totalTransfers;
+  const netFlow = totalIncome - totalExpenses;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,12 +88,6 @@ const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, o
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total Expenses:</span>
                     <span className="text-destructive font-medium">-${totalExpenses.toLocaleString()}</span>
-                  </div>
-                )}
-                {totalTransfers > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Transfers:</span>
-                    <span className="text-blue-600 font-medium">-${totalTransfers.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="border-t pt-2 flex justify-between font-medium">

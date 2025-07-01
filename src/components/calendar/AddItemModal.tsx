@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { CalendarItem } from '@/types/calendar';
-import { DollarSign, TrendingDown, ArrowUpCircle } from 'lucide-react';
+import { DollarSign, TrendingDown } from 'lucide-react';
 
 interface AddItemModalProps {
   open: boolean;
@@ -18,7 +18,7 @@ interface AddItemModalProps {
 }
 
 const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemModalProps) => {
-  const [type, setType] = useState<'income' | 'expense' | 'transfer'>('expense');
+  const [type, setType] = useState<'income' | 'expense'>('expense');
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
@@ -61,7 +61,6 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
   const typeOptions = [
     { value: 'income', label: 'Income', icon: DollarSign, color: 'text-primary' },
     { value: 'expense', label: 'Expense', icon: TrendingDown, color: 'text-destructive' },
-    { value: 'transfer', label: 'Transfer to Savings', icon: ArrowUpCircle, color: 'text-blue-600' },
   ];
 
   return (
@@ -87,7 +86,7 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
           {/* Type Selection */}
           <div className="space-y-3">
             <Label>Type</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {typeOptions.map(option => {
                 const Icon = option.icon;
                 return (
@@ -113,7 +112,7 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Rent, Salary, Emergency Fund"
+              placeholder="e.g., Rent, Salary, Groceries"
               required
             />
           </div>
