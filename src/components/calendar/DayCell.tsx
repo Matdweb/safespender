@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DayData } from '@/types/calendar';
-import { DollarSign, TrendingDown, ArrowUpCircle } from 'lucide-react';
+import { DollarSign, TrendingDown } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 interface DayCellProps {
@@ -17,7 +17,6 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
 
   const incomeItems = items.filter(item => item.type === 'income');
   const expenseItems = items.filter(item => item.type === 'expense');
-  const transferItems = items.filter(item => item.type === 'transfer');
 
   const getNetFlowColor = () => {
     if (netFlow > 0) return 'text-primary';
@@ -57,11 +56,6 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
         {expenseItems.length > 0 && (
           <div className="w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center">
             <TrendingDown className="w-2.5 h-2.5 text-destructive" />
-          </div>
-        )}
-        {transferItems.length > 0 && (
-          <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
-            <ArrowUpCircle className="w-2.5 h-2.5 text-blue-600" />
           </div>
         )}
       </div>
