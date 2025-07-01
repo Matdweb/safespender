@@ -16,18 +16,20 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
   const { addTransaction, addGoal } = useFinancial();
 
   useEffect(() => {
-    // Add the income transaction
-    if (data.income) {
-      addTransaction({
-        type: 'income',
-        amount: data.income.amount,
-        description: data.income.description,
-        date: data.income.date,
-        recurring: data.income.frequency !== 'one-time' ? {
-          type: data.income.frequency === 'biweekly' ? 'biweekly' : 
-                data.income.frequency === 'weekly' ? 'weekly' : 'monthly',
-          interval: 1
-        } : undefined
+    // Add income transactions
+    if (data.incomes) {
+      data.incomes.forEach(income => {
+        addTransaction({
+          type: 'income',
+          amount: income.amount,
+          description: income.description,
+          date: income.date,
+          recurring: income.frequency !== 'one-time' ? {
+            type: income.frequency === 'biweekly' ? 'biweekly' : 
+                  income.frequency === 'weekly' ? 'weekly' : 'monthly',
+            interval: 1
+          } : undefined
+        });
       });
     }
 
@@ -65,7 +67,7 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
     }
   }, [data, addTransaction, addGoal]);
 
-  const totalIncome = data.income ? data.income.amount : 0;
+  const totalIncome = data.incomes ? data.incomes.reduce((sum, inc) => sum + inc.amount, 0) : 0;
   const totalExpenses = data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const goalContribution = data.goal ? data.goal.recurringContribution : 0;
   const freeToSpend = totalIncome - totalExpenses - goalContribution;
@@ -95,21 +97,25 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
             ${freeToSpend.toLocaleString()}
           </div>
           <p className="text-sm text-muted-foreground">
-            Available after bills and savings each month
+            Available after bills and savings each period
           </p>
         </Card>
 
         {/* Income Summary */}
-        {data.income && (
+        {data.incomes && data.incomes.length > 0 && (
           <Card className="p-4">
             <div className="flex items-center gap-3 mb-2">
               <TrendingUp className="w-4 h-4 text-primary" />
               <h4 className="font-medium">Income Setup</h4>
             </div>
-            <p className="text-sm text-muted-foreground">
-              ${data.income.amount.toLocaleString()} from {data.income.description}
-              {data.income.frequency !== 'one-time' && ` • ${data.income.frequency}`}
-            </p>
+            <div className="space-y-1">
+              {data.incomes.map((income, index) => (
+                <p key={index} className="text-sm text-muted-foreground">
+                  ${income.amount.toLocaleString()} • {income.description}
+                  {income.frequency !== 'one-time' && ` • ${income.frequency}`}
+                </p>
+              ))}
+            </div>
           </Card>
         )}
 

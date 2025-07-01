@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export interface Transaction {
@@ -41,6 +42,7 @@ interface FinancialContextType {
   getTotalExpenses: () => number;
   getReservedExpenses: () => number;
   getFreeToSpend: () => number;
+  getPendingExpenses: () => number;
   isFirstTimeUser: boolean;
   completeOnboarding: () => void;
 }
@@ -65,10 +67,51 @@ const getValidDayForMonth = (day: number, month: number, year: number): number =
   return Math.min(day, daysInMonth);
 };
 
+// Helper function to get next income date
+const getNextIncomeDate = (transactions: Transaction[], fromDate: Date = new Date()): Date | null => {
+  const incomeTransactions = transactions.filter(t => t.type === 'income' && t.recurring);
+  if (incomeTransactions.length === 0) return null;
+
+  let nextIncomeDate: Date | null = null;
+  
+  incomeTransactions.forEach(income => {
+    if (!income.recurring) return;
+    
+    const baseDate = new Date(income.date);
+    let currentDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
+    
+    // Find next occurrence
+    while (currentDate <= fromDate) {
+      switch (income.recurring.type) {
+        case 'weekly':
+          currentDate.setDate(currentDate.getDate() + 7);
+          break;
+        case 'biweekly':
+          currentDate.setDate(currentDate.getDate() + 14);
+          break;
+        case 'monthly':
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          if (income.recurring.dayOfMonth) {
+            const validDay = getValidDayForMonth(income.recurring.dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
+            currentDate.setDate(validDay);
+          }
+          break;
+      }
+    }
+    
+    if (!nextIncomeDate || currentDate < nextIncomeDate) {
+      nextIncomeDate = currentDate;
+    }
+  });
+  
+  return nextIncomeDate;
+};
+
 export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
+  const [recurringCache, setRecurringCache] = useState<Map<string, Transaction[]>>(new Map());
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction: Transaction = {
@@ -108,10 +151,18 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const generateRecurringTransactions = (startDate: Date, endDate: Date): Transaction[] => {
+    const cacheKey = `${startDate.getTime()}-${endDate.getTime()}`;
+    
+    if (recurringCache.has(cacheKey)) {
+      return recurringCache.get(cacheKey)!;
+    }
+
     const generated: Transaction[] = [];
+    const processedIds = new Set<string>();
     
     transactions.forEach(transaction => {
-      if (!transaction.recurring) return;
+      if (!transaction.recurring || processedIds.has(transaction.id)) return;
+      processedIds.add(transaction.id);
       
       const { type, interval, dayOfMonth } = transaction.recurring;
       const baseDate = new Date(transaction.date);
@@ -127,11 +178,14 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
             nextDate.setDate(validDay);
           }
           
-          generated.push({
-            ...transaction,
-            id: `${transaction.id}-recurring-${nextDate.getTime()}`,
-            date: nextDate.toISOString().split('T')[0],
-          });
+          const generatedId = `${transaction.id}-recurring-${nextDate.getTime()}`;
+          if (!generated.find(g => g.id === generatedId)) {
+            generated.push({
+              ...transaction,
+              id: generatedId,
+              date: nextDate.toISOString().split('T')[0],
+            });
+          }
         }
         
         // Calculate next occurrence
@@ -152,6 +206,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       }
     });
     
+    recurringCache.set(cacheKey, generated);
     return generated;
   };
 
@@ -173,11 +228,41 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
+  const getPendingExpenses = () => {
+    const today = new Date();
+    const nextIncomeDate = getNextIncomeDate(transactions, today);
+    
+    if (!nextIncomeDate) return 0;
+    
+    // Get all expenses between now and next income
+    const recurringExpenses = generateRecurringTransactions(today, nextIncomeDate);
+    const upcomingExpenses = recurringExpenses.filter(t => 
+      t.type === 'expense' && 
+      new Date(t.date) >= today && 
+      new Date(t.date) <= nextIncomeDate
+    );
+    
+    return upcomingExpenses.reduce((sum, t) => sum + t.amount, 0);
+  };
+
   const getFreeToSpend = () => {
-    const totalIncome = getTotalIncome();
-    const totalExpenses = getTotalExpenses();
+    const today = new Date();
+    const nextIncomeDate = getNextIncomeDate(transactions, today);
+    
+    // Get income received up to today
+    const allTransactions = [...transactions, ...generateRecurringTransactions(new Date(today.getFullYear(), 0, 1), today)];
+    const incomeToDate = allTransactions
+      .filter(t => t.type === 'income' && new Date(t.date) <= today)
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    // Get expenses between last income and next income (or end of period)
+    const endDate = nextIncomeDate || new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const periodExpenses = getPendingExpenses();
+    
+    // Get savings allocated
     const totalSavings = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
-    return totalIncome - totalExpenses - totalSavings;
+    
+    return incomeToDate - periodExpenses - totalSavings;
   };
 
   const completeOnboarding = () => {
@@ -192,6 +277,11 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       setIsFirstTimeUser(false);
     }
   }, []);
+
+  // Clear cache when transactions change
+  useEffect(() => {
+    setRecurringCache(new Map());
+  }, [transactions]);
 
   return (
     <FinancialContext.Provider value={{
@@ -208,6 +298,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       getTotalExpenses,
       getReservedExpenses,
       getFreeToSpend,
+      getPendingExpenses,
       isFirstTimeUser,
       completeOnboarding,
     }}>

@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, AlertTriangle } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Clock } from 'lucide-react';
+import { useFinancial } from '@/contexts/FinancialContext';
 
 interface FreeToSpendCardProps {
   amount: number;
@@ -11,6 +12,8 @@ interface FreeToSpendCardProps {
 }
 
 const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }: FreeToSpendCardProps) => {
+  const { getPendingExpenses } = useFinancial();
+  const pendingExpenses = getPendingExpenses();
   const isLow = amount < 100;
   const isVeryLow = amount < 50;
 
@@ -47,6 +50,17 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
           <span>Assigned Savings</span>
           <span className="font-medium">-${assignedSavings.toLocaleString()}</span>
         </div>
+        
+        {pendingExpenses > 0 && (
+          <div className="flex justify-between text-orange-200">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Pending Expenses
+            </span>
+            <span className="font-medium">${pendingExpenses.toLocaleString()}</span>
+          </div>
+        )}
+        
         <div className="border-t border-white/20 pt-3 flex justify-between font-semibold text-white">
           <span>Available to Spend</span>
           <span>${amount.toLocaleString()}</span>
