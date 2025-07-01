@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import CalendarView from '@/components/calendar/CalendarView';
@@ -17,12 +16,13 @@ const Calendar = () => {
 
   const { 
     transactions, 
+    goals,
     addTransaction, 
     deleteTransaction, 
     generateRecurringTransactions 
   } = useFinancial();
 
-  // Convert transactions to calendar items and include recurring ones
+  // Convert transactions to calendar items and include recurring ones + savings
   const calendarItems: CalendarItem[] = React.useMemo(() => {
     // Get base transactions
     const baseItems = transactions.map(t => ({
@@ -63,11 +63,47 @@ const Calendar = () => {
       }
     }));
 
-    const allItems = [...baseItems, ...recurringItems];
+    // Add savings contributions as calendar items (treated like expenses)
+    const savingsItems: CalendarItem[] = [];
+    goals.forEach(goal => {
+      if (goal.recurringContribution > 0) {
+        // Generate savings contributions for the same period
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        
+        for (let monthOffset = 0; monthOffset <= 3; monthOffset++) {
+          const contributionDate = new Date(currentYear, currentMonth + monthOffset, 1);
+          
+          // Adjust based on contribution frequency
+          if (goal.contributionFrequency === 'monthly') {
+            contributionDate.setDate(1); // First day of month for simplicity
+          } else if (goal.contributionFrequency === 'biweekly') {
+            contributionDate.setDate(15); // Mid-month for biweekly
+          } else if (goal.contributionFrequency === 'weekly') {
+            contributionDate.setDate(7); // Weekly approximation
+          }
+          
+          if (contributionDate >= startOfMonth && contributionDate <= endOfPeriod) {
+            savingsItems.push({
+              id: `savings-${goal.id}-${contributionDate.getTime()}`,
+              type: 'expense' as const, // Treat savings as expenses
+              title: `💰 ${goal.name} Savings`,
+              amount: goal.recurringContribution,
+              date: contributionDate.toISOString().split('T')[0],
+              category: 'savings',
+              description: `Savings contribution to ${goal.name}`,
+            });
+          }
+        }
+      }
+    });
+
+    const allItems = [...baseItems, ...recurringItems, ...savingsItems];
     console.log(`Total calendar items: ${allItems.length}`);
     
     return allItems;
-  }, [transactions, currentDate, generateRecurringTransactions]);
+  }, [transactions, goals, currentDate, generateRecurringTransactions]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export interface Transaction {
@@ -172,45 +171,56 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     recurringTransactions.forEach(transaction => {
       const { type, interval, dayOfMonth } = transaction.recurring!;
       const baseDate = new Date(transaction.date);
+      
+      // Start from the base date or start date, whichever is later
       let currentDate = new Date(Math.max(baseDate.getTime(), startDate.getTime()));
+      
+      // If we have a specific day of month, ensure we start from that day
+      if (dayOfMonth && type === 'monthly') {
+        const validDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
+        currentDate.setDate(validDay);
+        
+        // If the day has already passed this month, move to next month
+        if (currentDate < startDate) {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          const nextValidDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
+          currentDate.setDate(nextValidDay);
+        }
+      }
+      
       let iterationCount = 0;
       const maxIterations = 100; // Safety limit
       
       while (currentDate <= endDate && iterationCount < maxIterations) {
-        if (currentDate > baseDate) {
-          let nextDate = new Date(currentDate);
-          
-          // Handle monthly recurring with specific day
-          if (type === 'monthly' && dayOfMonth) {
-            const validDay = getValidDayForMonth(dayOfMonth, nextDate.getMonth(), nextDate.getFullYear());
-            nextDate.setDate(validDay);
-          }
-          
-          const generatedId = `${transaction.id}-recurring-${nextDate.getTime()}`;
+        // Only generate if this occurrence is after the base date and within our range
+        if (currentDate >= startDate && currentDate > baseDate) {
+          const generatedId = `${transaction.id}-recurring-${currentDate.getTime()}`;
           if (!generated.find(g => g.id === generatedId)) {
             generated.push({
               ...transaction,
               id: generatedId,
-              date: nextDate.toISOString().split('T')[0],
+              date: currentDate.toISOString().split('T')[0],
             });
           }
         }
         
         // Calculate next occurrence
+        const nextDate = new Date(currentDate);
         switch (type) {
           case 'weekly':
-            currentDate.setDate(currentDate.getDate() + (7 * interval));
+            nextDate.setDate(nextDate.getDate() + (7 * interval));
             break;
           case 'biweekly':
-            currentDate.setDate(currentDate.getDate() + (14 * interval));
+            nextDate.setDate(nextDate.getDate() + (14 * interval));
             break;
           case 'monthly':
-            const originalDay = dayOfMonth || currentDate.getDate();
-            currentDate.setMonth(currentDate.getMonth() + interval);
-            const validDay = getValidDayForMonth(originalDay, currentDate.getMonth(), currentDate.getFullYear());
-            currentDate.setDate(validDay);
+            const originalDay = dayOfMonth || nextDate.getDate();
+            nextDate.setMonth(nextDate.getMonth() + interval);
+            const validDay = getValidDayForMonth(originalDay, nextDate.getMonth(), nextDate.getFullYear());
+            nextDate.setDate(validDay);
             break;
         }
+        currentDate = nextDate;
         iterationCount++;
       }
       
