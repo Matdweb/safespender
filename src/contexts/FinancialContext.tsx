@@ -27,15 +27,30 @@ export interface Goal {
   createdAt: string;
 }
 
+export interface BorrowedAmount {
+  id: string;
+  amount: number;
+  reason: string;
+  date: string;
+  repaidFromIncomeId?: string;
+}
+
 interface FinancialContextType {
   transactions: Transaction[];
   goals: Goal[];
+  borrowedAmounts: BorrowedAmount[];
+  currency: string;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;
   updateGoal: (id: string, updates: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
+  addBorrowedAmount: (amount: number, reason: string) => void;
+  setBorrowedAmounts: (amounts: BorrowedAmount[]) => void;
+  setCurrency: (currency: string) => void;
+  convertCurrency: (amount: number, toCurrency: string) => number;
+  getNextIncomeAmount: () => number;
   generateRecurringTransactions: (startDate: Date, endDate: Date) => Transaction[];
   getTotalIncome: () => number;
   getTotalExpenses: () => number;
@@ -109,6 +124,8 @@ const getNextIncomeDate = (transactions: Transaction[], fromDate: Date = new Dat
 export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [borrowedAmounts, setBorrowedAmounts] = useState<BorrowedAmount[]>([]);
+  const [currency, setCurrency] = useState<string>('USD');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [recurringCache, setRecurringCache] = useState<Map<string, Transaction[]>>(new Map());
 
@@ -150,6 +167,43 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
 
   const deleteGoal = (id: string) => {
     setGoals(prev => prev.filter(g => g.id !== id));
+  };
+
+  const addBorrowedAmount = (amount: number, reason: string) => {
+    const newBorrow: BorrowedAmount = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      amount,
+      reason,
+      date: new Date().toISOString().split('T')[0],
+    };
+    setBorrowedAmounts(prev => [...prev, newBorrow]);
+  };
+
+  const convertCurrency = (amount: number, toCurrency: string): number => {
+    // Placeholder exchange rates - in production, this would fetch real rates
+    const exchangeRates: { [key: string]: number } = {
+      USD: 1,
+      EUR: 0.85,
+      CRC: 520,
+      GBP: 0.73,
+      CAD: 1.25,
+    };
+
+    const fromRate = exchangeRates[currency] || 1;
+    const toRate = exchangeRates[toCurrency] || 1;
+    
+    return Math.round((amount / fromRate) * toRate);
+  };
+
+  const getNextIncomeAmount = (): number => {
+    const today = new Date();
+    const futureDate = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000); // 2 months ahead
+    
+    const recurringIncomes = generateRecurringTransactions(today, futureDate)
+      .filter(t => t.type === 'income' && new Date(t.date) > today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return recurringIncomes.length > 0 ? recurringIncomes[0].amount : 0;
   };
 
   const generateRecurringTransactions = (startDate: Date, endDate: Date): Transaction[] => {
@@ -286,7 +340,10 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     // Get savings allocated
     const totalSavings = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
     
-    return incomeToDate - periodExpenses - totalSavings;
+    // Add borrowed amounts
+    const totalBorrowed = borrowedAmounts.reduce((sum, borrow) => sum + borrow.amount, 0);
+    
+    return incomeToDate - periodExpenses - totalSavings + totalBorrowed;
   };
 
   const completeOnboarding = () => {
@@ -312,12 +369,19 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     <FinancialContext.Provider value={{
       transactions,
       goals,
+      borrowedAmounts,
+      currency,
       addTransaction,
       updateTransaction,
       deleteTransaction,
       addGoal,
       updateGoal,
       deleteGoal,
+      addBorrowedAmount,
+      setBorrowedAmounts,
+      setCurrency,
+      convertCurrency,
+      getNextIncomeAmount,
       generateRecurringTransactions,
       getTotalIncome,
       getTotalExpenses,

@@ -1,5 +1,4 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, Calendar, Target, TrendingUp } from 'lucide-react';
@@ -12,74 +11,97 @@ interface SummaryStepProps {
   onBack: () => void;
 }
 
-const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
-  const { addTransaction, addGoal } = useFinancial();
-  const hasInitialized = useRef(false);
+const SummaryStep = ({ data, onNext }: SummaryStepProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const { 
+    addTransaction, 
+    addGoal, 
+    transactions, 
+    goals,
+    setCurrency
+  } = useFinancial();
+
+  const handleFinish = async () => {
+    if (hasInitialized || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    setHasInitialized(true);
+
+    try {
+      // Set currency preference
+      if (data.currency) {
+        setCurrency(data.currency);
+      }
+
+      // Add income transactions
+      if (data.incomes) {
+        data.incomes.forEach((income, index) => {
+          console.log(`Creating income ${index + 1}:`, income.description, income.amount);
+          addTransaction({
+            type: 'income',
+            amount: income.amount,
+            description: income.description,
+            date: income.date,
+            recurring: income.frequency !== 'one-time' ? {
+              type: income.frequency === 'biweekly' ? 'biweekly' : 
+                    income.frequency === 'weekly' ? 'weekly' : 'monthly',
+              interval: 1
+            } : undefined
+          });
+        });
+      }
+
+      // Add expense transactions
+      data.expenses.forEach((expense, index) => {
+        const expenseDate = new Date();
+        if (expense.dayOfMonth) {
+          expenseDate.setDate(expense.dayOfMonth);
+          if (expenseDate < new Date()) {
+            expenseDate.setMonth(expenseDate.getMonth() + 1);
+          }
+        }
+
+        console.log(`Creating expense ${index + 1}:`, expense.description, expense.amount);
+        addTransaction({
+          type: 'expense',
+          amount: expense.amount,
+          description: expense.description,
+          date: expenseDate.toISOString().split('T')[0],
+          category: expense.category,
+          isReserved: true,
+          recurring: expense.recurring
+        });
+      });
+
+      // Add the goal
+      if (data.goal) {
+        console.log('Creating goal:', data.goal.name, data.goal.targetAmount);
+        addGoal({
+          name: data.goal.name,
+          targetAmount: data.goal.targetAmount,
+          currentAmount: 0,
+          recurringContribution: data.goal.recurringContribution,
+          contributionFrequency: data.goal.contributionFrequency,
+          icon: data.goal.icon
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     // Prevent duplicate initialization
-    if (hasInitialized.current) {
+    if (hasInitialized) {
       console.log('SummaryStep: Already initialized, skipping data creation');
       return;
     }
 
     console.log('SummaryStep: Initializing data creation');
-    hasInitialized.current = true;
+    setHasInitialized(true);
 
-    // Add income transactions
-    if (data.incomes) {
-      data.incomes.forEach((income, index) => {
-        console.log(`Creating income ${index + 1}:`, income.description, income.amount);
-        addTransaction({
-          type: 'income',
-          amount: income.amount,
-          description: income.description,
-          date: income.date,
-          recurring: income.frequency !== 'one-time' ? {
-            type: income.frequency === 'biweekly' ? 'biweekly' : 
-                  income.frequency === 'weekly' ? 'weekly' : 'monthly',
-            interval: 1
-          } : undefined
-        });
-      });
-    }
-
-    // Add expense transactions
-    data.expenses.forEach((expense, index) => {
-      const expenseDate = new Date();
-      if (expense.dayOfMonth) {
-        expenseDate.setDate(expense.dayOfMonth);
-        if (expenseDate < new Date()) {
-          expenseDate.setMonth(expenseDate.getMonth() + 1);
-        }
-      }
-
-      console.log(`Creating expense ${index + 1}:`, expense.description, expense.amount);
-      addTransaction({
-        type: 'expense',
-        amount: expense.amount,
-        description: expense.description,
-        date: expenseDate.toISOString().split('T')[0],
-        category: expense.category,
-        isReserved: true,
-        recurring: expense.recurring
-      });
-    });
-
-    // Add the goal
-    if (data.goal) {
-      console.log('Creating goal:', data.goal.name, data.goal.targetAmount);
-      addGoal({
-        name: data.goal.name,
-        targetAmount: data.goal.targetAmount,
-        currentAmount: 0,
-        recurringContribution: data.goal.recurringContribution,
-        contributionFrequency: data.goal.contributionFrequency,
-        icon: data.goal.icon
-      });
-    }
-
-    console.log('SummaryStep: Data creation completed');
+    handleFinish();
   }, []); // Empty dependency array - only run once
 
   const totalIncome = data.incomes ? data.incomes.reduce((sum, inc) => sum + inc.amount, 0) : 0;

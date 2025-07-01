@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import WelcomeStep from './WelcomeStep';
+import CurrencyStep from './CurrencyStep';
 import IncomeStep from './IncomeStep';
 import ExpensesStep from './ExpensesStep';
 import GoalsStep from './GoalsStep';
@@ -50,6 +51,7 @@ const OnboardingFlow = ({ open, onComplete }: OnboardingFlowProps) => {
 
   const steps = [
     { component: WelcomeStep, title: 'Welcome' },
+    { component: CurrencyStep, title: 'Currency' },
     { component: IncomeStep, title: 'Income' },
     { component: ExpensesStep, title: 'Expenses' },
     { component: GoalsStep, title: 'Goals' },
