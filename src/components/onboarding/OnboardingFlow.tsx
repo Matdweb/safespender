@@ -85,7 +85,7 @@ const OnboardingFlow = ({ open, onComplete }: OnboardingFlowProps) => {
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <div className="p-6 space-y-6">
           <div className="space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-sm text-muted-foreground pt-2">
               <span>Step {currentStep + 1} of {steps.length}</span>
               <span>{currentStepData.title}</span>
             </div>
