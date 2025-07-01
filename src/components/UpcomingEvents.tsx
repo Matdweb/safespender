@@ -44,7 +44,7 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
   };
 
   return (
-    <Card className="p-6 card-border ">
+    <Card className="p-6 card-border min-h-60">
       <div className="flex items-center gap-2 mb-4">
         <Calendar className="w-5 h-5 text-finance-primary" />
         <h3 className="font-semibold">Upcoming Events</h3>
