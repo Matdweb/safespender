@@ -118,6 +118,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       ...transaction,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     };
+    console.log('Adding transaction:', newTransaction.description, newTransaction.amount);
     setTransactions(prev => [newTransaction, ...prev]);
   };
 
@@ -128,6 +129,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const deleteTransaction = (id: string) => {
+    console.log('Deleting transaction:', id);
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
@@ -137,6 +139,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       createdAt: new Date().toISOString(),
     };
+    console.log('Adding goal:', newGoal.name, newGoal.targetAmount);
     setGoals(prev => [...prev, newGoal]);
   };
 
@@ -151,24 +154,29 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const generateRecurringTransactions = (startDate: Date, endDate: Date): Transaction[] => {
-    const cacheKey = `${startDate.getTime()}-${endDate.getTime()}`;
+    const cacheKey = `${startDate.getTime()}-${endDate.getTime()}-${transactions.length}`;
     
     if (recurringCache.has(cacheKey)) {
-      return recurringCache.get(cacheKey)!;
+      const cached = recurringCache.get(cacheKey)!;
+      console.log(`Using cached recurring transactions: ${cached.length} items`);
+      return cached;
     }
 
-    const generated: Transaction[] = [];
-    const processedIds = new Set<string>();
+    console.log(`Generating recurring transactions from ${startDate.toDateString()} to ${endDate.toDateString()}`);
     
-    transactions.forEach(transaction => {
-      if (!transaction.recurring || processedIds.has(transaction.id)) return;
-      processedIds.add(transaction.id);
-      
-      const { type, interval, dayOfMonth } = transaction.recurring;
+    const generated: Transaction[] = [];
+    const recurringTransactions = transactions.filter(t => t.recurring);
+    
+    console.log(`Found ${recurringTransactions.length} base recurring transactions`);
+    
+    recurringTransactions.forEach(transaction => {
+      const { type, interval, dayOfMonth } = transaction.recurring!;
       const baseDate = new Date(transaction.date);
       let currentDate = new Date(Math.max(baseDate.getTime(), startDate.getTime()));
+      let iterationCount = 0;
+      const maxIterations = 100; // Safety limit
       
-      while (currentDate <= endDate) {
+      while (currentDate <= endDate && iterationCount < maxIterations) {
         if (currentDate > baseDate) {
           let nextDate = new Date(currentDate);
           
@@ -203,9 +211,15 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
             currentDate.setDate(validDay);
             break;
         }
+        iterationCount++;
+      }
+      
+      if (iterationCount >= maxIterations) {
+        console.warn(`Max iterations reached for transaction: ${transaction.description}`);
       }
     });
     
+    console.log(`Generated ${generated.length} recurring transaction instances`);
     recurringCache.set(cacheKey, generated);
     return generated;
   };
@@ -280,6 +294,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
 
   // Clear cache when transactions change
   useEffect(() => {
+    console.log('Transactions changed, clearing recurring cache');
     setRecurringCache(new Map());
   }, [transactions]);
 

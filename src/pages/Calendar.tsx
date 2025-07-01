@@ -39,10 +39,15 @@ const Calendar = () => {
       } : undefined
     }));
 
-    // Generate recurring transactions for the current month and next month
+    // Generate recurring transactions for a limited period (3 months ahead only)
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfNextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
-    const recurringTransactions = generateRecurringTransactions(startOfMonth, endOfNextMonth);
+    const endOfPeriod = new Date(currentDate.getFullYear(), currentDate.getMonth() + 3, 0);
+    
+    console.log(`Generating recurring transactions from ${startOfMonth.toDateString()} to ${endOfPeriod.toDateString()}`);
+    
+    const recurringTransactions = generateRecurringTransactions(startOfMonth, endOfPeriod);
+    
+    console.log(`Generated ${recurringTransactions.length} recurring transactions`);
     
     const recurringItems = recurringTransactions.map(t => ({
       id: t.id,
@@ -58,7 +63,10 @@ const Calendar = () => {
       }
     }));
 
-    return [...baseItems, ...recurringItems];
+    const allItems = [...baseItems, ...recurringItems];
+    console.log(`Total calendar items: ${allItems.length}`);
+    
+    return allItems;
   }, [transactions, currentDate, generateRecurringTransactions]);
 
   const toggleDarkMode = () => {
@@ -80,6 +88,7 @@ const Calendar = () => {
   };
 
   const handleAddItem = (item: Omit<CalendarItem, 'id'>) => {
+    console.log('Adding new transaction:', item.title, item.amount);
     addTransaction({
       type: item.type,
       amount: item.amount,
@@ -96,6 +105,7 @@ const Calendar = () => {
   };
 
   const handleDeleteItem = (id: string) => {
+    console.log('Deleting transaction:', id);
     deleteTransaction(id);
   };
 

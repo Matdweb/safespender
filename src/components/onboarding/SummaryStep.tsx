@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, Calendar, Target, TrendingUp } from 'lucide-react';
@@ -14,11 +14,22 @@ interface SummaryStepProps {
 
 const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
   const { addTransaction, addGoal } = useFinancial();
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate initialization
+    if (hasInitialized.current) {
+      console.log('SummaryStep: Already initialized, skipping data creation');
+      return;
+    }
+
+    console.log('SummaryStep: Initializing data creation');
+    hasInitialized.current = true;
+
     // Add income transactions
     if (data.incomes) {
-      data.incomes.forEach(income => {
+      data.incomes.forEach((income, index) => {
+        console.log(`Creating income ${index + 1}:`, income.description, income.amount);
         addTransaction({
           type: 'income',
           amount: income.amount,
@@ -34,7 +45,7 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
     }
 
     // Add expense transactions
-    data.expenses.forEach(expense => {
+    data.expenses.forEach((expense, index) => {
       const expenseDate = new Date();
       if (expense.dayOfMonth) {
         expenseDate.setDate(expense.dayOfMonth);
@@ -43,6 +54,7 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
         }
       }
 
+      console.log(`Creating expense ${index + 1}:`, expense.description, expense.amount);
       addTransaction({
         type: 'expense',
         amount: expense.amount,
@@ -56,6 +68,7 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
 
     // Add the goal
     if (data.goal) {
+      console.log('Creating goal:', data.goal.name, data.goal.targetAmount);
       addGoal({
         name: data.goal.name,
         targetAmount: data.goal.targetAmount,
@@ -65,7 +78,9 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
         icon: data.goal.icon
       });
     }
-  }, [data, addTransaction, addGoal]);
+
+    console.log('SummaryStep: Data creation completed');
+  }, []); // Empty dependency array - only run once
 
   const totalIncome = data.incomes ? data.incomes.reduce((sum, inc) => sum + inc.amount, 0) : 0;
   const totalExpenses = data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
