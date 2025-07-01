@@ -27,8 +27,9 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
   const dayContent = (
     <div
       className={cn(
-        'relative p-3 min-h-[80px] border rounded-lg cursor-pointer transition-all duration-200',
+        'relative p-2 sm:p-3 min-h-[60px] sm:min-h-[80px] border rounded-lg cursor-pointer transition-all duration-200',
         'hover:bg-accent/50 hover:border-accent-foreground/20',
+        'active:scale-95 touch-manipulation',
         isToday && 'ring-2 ring-primary ring-offset-2 bg-primary/5',
         !isCurrentMonth && 'opacity-40',
         isPast && isCurrentMonth && 'bg-muted/20',
@@ -40,36 +41,36 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
     >
       {/* Date number */}
       <div className={cn(
-        'text-sm font-medium mb-2',
+        'text-xs sm:text-sm font-medium mb-1 sm:mb-2',
         isToday ? 'text-primary font-bold' : 'text-foreground'
       )}>
         {date.getDate()}
       </div>
 
-      {/* Item indicators */}
-      <div className="flex items-center gap-1 mb-2">
+      {/* Mobile-friendly indicators - dots instead of icons */}
+      <div className="flex items-center gap-1 mb-1">
         {incomeItems.length > 0 && (
-          <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
-            <DollarSign className="w-2.5 h-2.5 text-primary" />
-          </div>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-primary flex-shrink-0" 
+               title={`${incomeItems.length} income item(s)`} />
         )}
         {expenseItems.length > 0 && (
-          <div className="w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center">
-            <TrendingDown className="w-2.5 h-2.5 text-destructive" />
-          </div>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-destructive flex-shrink-0"
+               title={`${expenseItems.length} expense item(s)`} />
         )}
       </div>
 
-      {/* Net flow indicator */}
+      {/* Net flow indicator - smaller on mobile */}
       {netFlow !== 0 && (
-        <div className={cn('text-xs font-medium', getNetFlowColor())}>
-          {netFlow > 0 ? '+' : ''}${Math.abs(netFlow).toLocaleString()}
+        <div className={cn('text-xs font-medium truncate', getNetFlowColor())}>
+          {netFlow > 0 ? '+' : ''}${Math.abs(netFlow) >= 1000 ? 
+            `${(Math.abs(netFlow) / 1000).toFixed(1)}k` : 
+            Math.abs(netFlow).toLocaleString()}
         </div>
       )}
 
-      {/* Hover effect */}
+      {/* Hover effect - only on larger screens */}
       {isHovered && items.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-accent/10 rounded-lg">
+        <div className="absolute inset-0 hidden sm:flex items-center justify-center bg-accent/10 rounded-lg">
           <span className="text-xs text-muted-foreground">Click to add</span>
         </div>
       )}

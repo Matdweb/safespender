@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, DollarSign, TrendingUp, Target } from 'lucide-react';
 
 interface Event {
@@ -44,49 +45,51 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
   };
 
   return (
-    <Card className="p-6 card-border min-h-60">
+    <Card className="p-6 card-border">
       <div className="flex items-center gap-2 mb-4">
         <Calendar className="w-5 h-5 text-finance-primary" />
         <h3 className="font-semibold">Upcoming Events</h3>
       </div>
 
-      <div className="space-y-3">
-        {events.length === 0 ? (
-          <p className="text-subtle text-center py-8">
-            No upcoming events. Add some income or expenses to get started!
-          </p>
-        ) : (
-          events.map((event) => (
-            <div
-              key={event.id}
-              className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${getEventColor(event.type)}`}
-            >
-              <div className="flex items-center gap-3">
-                {getEventIcon(event.type)}
-                <div>
-                  <p className="font-medium text-sm">{event.title}</p>
-                  <p className="text-xs text-subtle">
-                    {new Date(event.date).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}
-                    {event.recurring && ' • Recurring'}
+      <ScrollArea className="h-80">
+        <div className="space-y-3 pr-4">
+          {events.length === 0 ? (
+            <p className="text-subtle text-center py-8">
+              No upcoming events. Add some income or expenses to get started!
+            </p>
+          ) : (
+            events.map((event) => (
+              <div
+                key={event.id}
+                className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${getEventColor(event.type)}`}
+              >
+                <div className="flex items-center gap-3">
+                  {getEventIcon(event.type)}
+                  <div>
+                    <p className="font-medium text-sm">{event.title}</p>
+                    <p className="text-xs text-subtle">
+                      {new Date(event.date).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                      {event.recurring && ' • Recurring'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`font-semibold text-sm ${
+                    event.type === 'income' ? 'text-finance-primary' : 
+                    event.type === 'expense' ? 'text-finance-neutral-600 dark:text-finance-neutral-400' : 
+                    'text-finance-teal-600 dark:text-finance-teal-500'
+                  }`}>
+                    {event.type === 'income' ? '+' : '-'}${event.amount.toLocaleString()}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className={`font-semibold text-sm ${
-                  event.type === 'income' ? 'text-finance-primary' : 
-                  event.type === 'expense' ? 'text-finance-neutral-600 dark:text-finance-neutral-400' : 
-                  'text-finance-teal-600 dark:text-finance-teal-500'
-                }`}>
-                  {event.type === 'income' ? '+' : '-'}${event.amount.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
     </Card>
   );
 };

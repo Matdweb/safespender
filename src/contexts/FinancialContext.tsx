@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export interface Transaction {
@@ -13,6 +12,7 @@ export interface Transaction {
     type: 'weekly' | 'monthly' | 'biweekly';
     interval: number;
     endDate?: string;
+    dayOfMonth?: number;
   };
 }
 
@@ -58,6 +58,12 @@ export const useFinancial = () => {
 interface FinancialProviderProps {
   children: ReactNode;
 }
+
+// Helper function to handle date edge cases
+const getValidDayForMonth = (day: number, month: number, year: number): number => {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return Math.min(day, daysInMonth);
+};
 
 export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -107,16 +113,24 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     transactions.forEach(transaction => {
       if (!transaction.recurring) return;
       
-      const { type, interval } = transaction.recurring;
+      const { type, interval, dayOfMonth } = transaction.recurring;
       const baseDate = new Date(transaction.date);
       let currentDate = new Date(Math.max(baseDate.getTime(), startDate.getTime()));
       
       while (currentDate <= endDate) {
         if (currentDate > baseDate) {
+          let nextDate = new Date(currentDate);
+          
+          // Handle monthly recurring with specific day
+          if (type === 'monthly' && dayOfMonth) {
+            const validDay = getValidDayForMonth(dayOfMonth, nextDate.getMonth(), nextDate.getFullYear());
+            nextDate.setDate(validDay);
+          }
+          
           generated.push({
             ...transaction,
-            id: `${transaction.id}-recurring-${currentDate.getTime()}`,
-            date: currentDate.toISOString().split('T')[0],
+            id: `${transaction.id}-recurring-${nextDate.getTime()}`,
+            date: nextDate.toISOString().split('T')[0],
           });
         }
         
@@ -129,7 +143,10 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
             currentDate.setDate(currentDate.getDate() + (14 * interval));
             break;
           case 'monthly':
+            const originalDay = dayOfMonth || currentDate.getDate();
             currentDate.setMonth(currentDate.getMonth() + interval);
+            const validDay = getValidDayForMonth(originalDay, currentDate.getMonth(), currentDate.getFullYear());
+            currentDate.setDate(validDay);
             break;
         }
       }

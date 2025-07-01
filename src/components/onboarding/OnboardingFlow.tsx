@@ -20,7 +20,6 @@ export type OnboardingData = {
     amount: number;
     date: string;
     frequency: 'one-time' | 'weekly' | 'biweekly' | 'monthly';
-    allocation: 'free-spend' | 'bills' | 'savings' | 'mixed';
     description: string;
   };
   expenses: Array<{
@@ -80,8 +79,13 @@ const OnboardingFlow = ({ open, onComplete }: OnboardingFlowProps) => {
     }
   };
 
+  const handleClose = () => {
+    completeOnboarding();
+    onComplete();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <div className="p-6 space-y-6">
           <div className="space-y-2">

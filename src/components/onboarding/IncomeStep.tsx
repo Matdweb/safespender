@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { OnboardingData } from './OnboardingFlow';
 
 interface IncomeStepProps {
@@ -17,7 +16,6 @@ const IncomeStep = ({ onNext, onBack }: IncomeStepProps) => {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [frequency, setFrequency] = useState('biweekly');
-  const [allocation, setAllocation] = useState('free-spend');
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -42,7 +40,6 @@ const IncomeStep = ({ onNext, onBack }: IncomeStepProps) => {
           amount: parseFloat(amount),
           date,
           frequency: frequency as 'one-time' | 'weekly' | 'biweekly' | 'monthly',
-          allocation: allocation as 'free-spend' | 'bills' | 'savings' | 'mixed',
           description: description || 'Income'
         }
       });
@@ -55,17 +52,17 @@ const IncomeStep = ({ onNext, onBack }: IncomeStepProps) => {
         <div className="text-6xl">💼</div>
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            Let's start with your next paycheck
+            Let's start with your income
           </h2>
           <p className="text-muted-foreground">
-            This helps us calculate how much you'll have available to spend
+            Tell us about your regular income - you can allocate it to different purposes later
           </p>
         </div>
       </div>
 
       <div className="space-y-6 max-w-md mx-auto">
         <div className="space-y-2">
-          <Label htmlFor="amount">💰 How much do you expect to receive?</Label>
+          <Label htmlFor="amount">💰 How much do you receive?</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
             <Input
@@ -119,28 +116,10 @@ const IncomeStep = ({ onNext, onBack }: IncomeStepProps) => {
           </Select>
         </div>
 
-        <div className="space-y-3">
-          <Label>🧩 How would you like to allocate this?</Label>
-          <RadioGroup value={allocation} onValueChange={setAllocation}>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="free-spend" id="free-spend" />
-              <Label htmlFor="free-spend" className="text-sm">
-                💸 Available to spend freely
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="bills" id="bills" />
-              <Label htmlFor="bills" className="text-sm">
-                🧾 Reserved for bills & expenses
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="savings" id="savings" />
-              <Label htmlFor="savings" className="text-sm">
-                💰 Direct to savings goals
-              </Label>
-            </div>
-          </RadioGroup>
+        <div className="p-4 bg-muted/50 rounded-lg">
+          <p className="text-sm text-muted-foreground">
+            💡 Don't worry about allocating your income right now. You can organize it into budgets, bills, and savings later using the dashboard.
+          </p>
         </div>
       </div>
 
