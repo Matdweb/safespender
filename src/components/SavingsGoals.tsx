@@ -4,17 +4,10 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Target, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-interface SavingsGoal {
-  id: string;
-  title: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline?: string;
-}
+import { Goal } from '@/contexts/FinancialContext';
 
 interface SavingsGoalsProps {
-  goals: SavingsGoal[];
+  goals: Goal[];
   onAddGoal: () => void;
 }
 
@@ -49,7 +42,7 @@ const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
               <div key={goal.id} className="space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-medium text-sm">{goal.title}</h4>
+                    <h4 className="font-medium text-sm">{goal.name}</h4>
                     <p className="text-xs text-subtle">
                       ${goal.currentAmount.toLocaleString()} of ${goal.targetAmount.toLocaleString()}
                     </p>
@@ -58,14 +51,6 @@ const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
                     <p className="text-sm font-semibold text-finance-primary">
                       {progress.toFixed(0)}%
                     </p>
-                    {goal.deadline && (
-                      <p className="text-xs text-subtle">
-                        Due {new Date(goal.deadline).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          year: 'numeric' 
-                        })}
-                      </p>
-                    )}
                   </div>
                 </div>
                 

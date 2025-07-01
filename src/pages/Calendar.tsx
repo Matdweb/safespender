@@ -27,7 +27,7 @@ const Calendar = () => {
     // Get base transactions
     const baseItems = transactions.map(t => ({
       id: t.id,
-      type: t.type as 'income' | 'expense',
+      type: t.type,
       title: t.description,
       amount: t.amount,
       date: t.date,
@@ -46,7 +46,7 @@ const Calendar = () => {
     
     const recurringItems = recurringTransactions.map(t => ({
       id: t.id,
-      type: t.type as 'income' | 'expense',
+      type: t.type,
       title: t.description,
       amount: t.amount,
       date: t.date,
