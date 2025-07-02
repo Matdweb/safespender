@@ -17,6 +17,7 @@ interface OnboardingFlowProps {
 }
 
 export type OnboardingData = {
+  currency?: string;
   incomes?: Array<{
     amount: number;
     date: string;

@@ -8,10 +8,10 @@ import { useFinancial } from '@/contexts/FinancialContext';
 interface SummaryStepProps {
   data: OnboardingData;
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
-const SummaryStep = ({ data, onNext }: SummaryStepProps) => {
+const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const { 
@@ -203,9 +203,11 @@ const SummaryStep = ({ data, onNext }: SummaryStepProps) => {
         </p>
         
         <div className="flex gap-3 justify-center">
-          <Button variant="outline" onClick={onBack}>
-            Back
-          </Button>
+          {onBack && (
+            <Button variant="outline" onClick={onBack}>
+              Back
+            </Button>
+          )}
           <Button 
             onClick={onNext}
             size="lg" 
