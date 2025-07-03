@@ -2,12 +2,13 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, DollarSign, TrendingUp, Target } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Target, ArrowUpCircle } from 'lucide-react';
 import { useFinancial } from '@/contexts/FinancialContext';
+import CurrencyDisplay from './CurrencyDisplay';
 
 interface Event {
   id: string;
-  type: 'income' | 'expense' | 'savings';
+  type: 'income' | 'expense' | 'savings' | 'borrow';
   title: string;
   amount: number;
   date: string;
@@ -37,7 +38,7 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
       })
       .map(t => ({
         id: t.id,
-        type: t.type,
+        type: t.type === 'borrow' ? 'borrow' : t.type,
         title: t.description,
         amount: t.amount,
         date: t.date,
@@ -94,6 +95,8 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
         return <TrendingUp className="w-4 h-4 text-finance-neutral-600 dark:text-finance-neutral-400 rotate-180" />;
       case 'savings':
         return <Target className="w-4 h-4 text-blue-600" />;
+      case 'borrow':
+        return <ArrowUpCircle className="w-4 h-4 text-blue-600" />;
       default:
         return <Calendar className="w-4 h-4" />;
     }
@@ -107,6 +110,8 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
         return 'border-l-destructive bg-destructive/5';
       case 'savings':
         return 'border-l-blue-600 bg-blue-50 dark:bg-blue-700/10';
+      case 'borrow':
+        return 'border-l-blue-500 bg-blue-50 dark:bg-blue-700/10';
       default:
         return 'border-l-finance-neutral-300 bg-finance-neutral-50 dark:bg-finance-neutral-900';
     }
@@ -134,7 +139,14 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
                 <div className="flex items-center gap-3">
                   {getEventIcon(event.type)}
                   <div>
-                    <p className="font-medium text-sm">{event.title}</p>
+                    <p className="font-medium text-sm">
+                      {event.title}
+                      {event.type === 'borrow' && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                          Advance
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-subtle">
                       {new Date(event.date).toLocaleDateString('en-US', { 
                         month: 'short', 
@@ -148,9 +160,11 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
                   <p className={`font-semibold text-sm ${
                     event.type === 'income' ? 'text-finance-primary' : 
                     event.type === 'expense' ? 'text-finance-neutral-600 dark:text-finance-neutral-400' : 
+                    event.type === 'borrow' ? 'text-blue-600' :
                     'text-blue-600'
                   }`}>
-                    {event.type === 'income' ? '+' : '-'}${event.amount.toLocaleString()}
+                    {event.type === 'income' || event.type === 'borrow' ? '+' : '-'}
+                    <CurrencyDisplay amount={event.amount} className="inline" />
                   </p>
                 </div>
               </div>
