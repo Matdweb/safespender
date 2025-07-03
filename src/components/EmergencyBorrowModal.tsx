@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, DollarSign } from 'lucide-react';
 import { useFinancial } from '@/contexts/FinancialContext';
+import { useToast } from '@/hooks/use-toast';
+import CurrencyDisplay from './CurrencyDisplay';
 
 interface EmergencyBorrowModalProps {
   open: boolean;
@@ -16,14 +18,27 @@ interface EmergencyBorrowModalProps {
 const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps) => {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
-  const { getNextIncomeAmount, addBorrowedAmount } = useFinancial();
+  const { getNextIncomeAmount, addTransaction } = useFinancial();
+  const { toast } = useToast();
 
   const maxBorrowAmount = Math.floor(getNextIncomeAmount() * 0.5); // Max 50% of next income
   const isValidAmount = amount && parseFloat(amount) > 0 && parseFloat(amount) <= maxBorrowAmount;
 
   const handleBorrow = () => {
     if (isValidAmount) {
-      addBorrowedAmount(parseFloat(amount), reason || 'Emergency');
+      addTransaction({
+        type: 'borrow',
+        amount: parseFloat(amount),
+        description: reason || 'Emergency advance',
+        date: new Date().toISOString().split('T')[0],
+        category: 'advance'
+      });
+      
+      toast({
+        title: "Advance Approved! 💰",
+        description: `$${parseFloat(amount).toLocaleString()} added to your available balance`,
+      });
+      
       setAmount('');
       setReason('');
       onOpenChange(false);
@@ -71,7 +86,7 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Maximum: ${maxBorrowAmount.toLocaleString()} (50% of next income)
+              Maximum: <CurrencyDisplay amount={maxBorrowAmount} className="inline" /> (50% of next income)
             </p>
           </div>
 
@@ -94,12 +109,12 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
           <div className="bg-muted/50 p-3 rounded-lg">
             <div className="flex justify-between text-sm">
               <span>Next Income:</span>
-              <span className="font-medium">${getNextIncomeAmount().toLocaleString()}</span>
+              <span className="font-medium"><CurrencyDisplay amount={getNextIncomeAmount()} className="inline" /></span>
             </div>
             <div className="flex justify-between text-sm">
               <span>After Borrowing:</span>
               <span className="font-medium">
-                ${(getNextIncomeAmount() - (parseFloat(amount) || 0)).toLocaleString()}
+                <CurrencyDisplay amount={getNextIncomeAmount() - (parseFloat(amount) || 0)} className="inline" />
               </span>
             </div>
           </div>
@@ -113,7 +128,7 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
               disabled={!isValidAmount}
               className="flex-1"
             >
-              Borrow ${amount || '0'}
+              Borrow <CurrencyDisplay amount={parseFloat(amount) || 0} className="inline ml-1" />
             </Button>
           </div>
         </div>

@@ -2,12 +2,13 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export interface Transaction {
   id: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'borrow';
   amount: number;
   description: string;
   date: string;
   category?: string;
   isReserved?: boolean;
+  borrowedFromIncomeId?: string;
   recurring?: {
     type: 'weekly' | 'monthly' | 'biweekly';
     interval: number;
@@ -134,7 +135,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       ...transaction,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     };
-    console.log('Adding transaction:', newTransaction.description, newTransaction.amount);
+    console.log('Adding transaction:', newTransaction.description, newTransaction.amount, newTransaction.type);
     setTransactions(prev => [newTransaction, ...prev]);
   };
 
@@ -170,6 +171,18 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const addBorrowedAmount = (amount: number, reason: string) => {
+    // Add as a transaction instead of separate borrowed amount
+    const borrowTransaction: Omit<Transaction, 'id'> = {
+      type: 'borrow',
+      amount,
+      description: reason || 'Emergency advance',
+      date: new Date().toISOString().split('T')[0],
+      category: 'advance'
+    };
+    
+    addTransaction(borrowTransaction);
+    
+    // Also keep the old system for backwards compatibility
     const newBorrow: BorrowedAmount = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       amount,
@@ -218,7 +231,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     console.log(`Generating recurring transactions from ${startDate.toDateString()} to ${endDate.toDateString()}`);
     
     const generated: Transaction[] = [];
-    const recurringTransactions = transactions.filter(t => t.recurring);
+    const recurringTransactions = transactions.filter(t => t.recurring && t.type !== 'borrow'); // Don't make borrowed amounts recurring
     
     console.log(`Found ${recurringTransactions.length} base recurring transactions`);
     
@@ -226,15 +239,12 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       const { type, interval, dayOfMonth } = transaction.recurring!;
       const baseDate = new Date(transaction.date);
       
-      // Start from the base date or start date, whichever is later
       let currentDate = new Date(Math.max(baseDate.getTime(), startDate.getTime()));
       
-      // If we have a specific day of month, ensure we start from that day
       if (dayOfMonth && type === 'monthly') {
         const validDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
         currentDate.setDate(validDay);
         
-        // If the day has already passed this month, move to next month
         if (currentDate < startDate) {
           currentDate.setMonth(currentDate.getMonth() + 1);
           const nextValidDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
@@ -243,22 +253,30 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       }
       
       let iterationCount = 0;
-      const maxIterations = 100; // Safety limit
+      const maxIterations = 100;
       
       while (currentDate <= endDate && iterationCount < maxIterations) {
-        // Only generate if this occurrence is after the base date and within our range
         if (currentDate >= startDate && currentDate > baseDate) {
           const generatedId = `${transaction.id}-recurring-${currentDate.getTime()}`;
           if (!generated.find(g => g.id === generatedId)) {
+            // Adjust amount if this income has borrowed amounts against it
+            let adjustedAmount = transaction.amount;
+            if (transaction.type === 'income') {
+              const borrowedAgainstThis = transactions
+                .filter(t => t.type === 'borrow' && t.borrowedFromIncomeId === transaction.id)
+                .reduce((sum, t) => sum + t.amount, 0);
+              adjustedAmount = Math.max(0, transaction.amount - borrowedAgainstThis);
+            }
+            
             generated.push({
               ...transaction,
               id: generatedId,
+              amount: adjustedAmount,
               date: currentDate.toISOString().split('T')[0],
             });
           }
         }
         
-        // Calculate next occurrence
         const nextDate = new Date(currentDate);
         switch (type) {
           case 'weekly':
@@ -312,7 +330,6 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     
     if (!nextIncomeDate) return 0;
     
-    // Get all expenses between now and next income
     const recurringExpenses = generateRecurringTransactions(today, nextIncomeDate);
     const upcomingExpenses = recurringExpenses.filter(t => 
       t.type === 'expense' && 
@@ -327,21 +344,20 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     const today = new Date();
     const nextIncomeDate = getNextIncomeDate(transactions, today);
     
-    // Get income received up to today
     const allTransactions = [...transactions, ...generateRecurringTransactions(new Date(today.getFullYear(), 0, 1), today)];
     const incomeToDate = allTransactions
       .filter(t => t.type === 'income' && new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
     
-    // Get expenses between last income and next income (or end of period)
     const endDate = nextIncomeDate || new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
     const periodExpenses = getPendingExpenses();
     
-    // Get savings allocated
     const totalSavings = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
     
-    // Add borrowed amounts
-    const totalBorrowed = borrowedAmounts.reduce((sum, borrow) => sum + borrow.amount, 0);
+    // Include borrowed amounts as positive additions
+    const totalBorrowed = transactions
+      .filter(t => t.type === 'borrow')
+      .reduce((sum, t) => sum + t.amount, 0);
     
     return incomeToDate - periodExpenses - totalSavings + totalBorrowed;
   };

@@ -15,10 +15,12 @@ interface FreeToSpendCardProps {
 }
 
 const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }: FreeToSpendCardProps) => {
-  const { getPendingExpenses, borrowedAmounts } = useFinancial();
+  const { getPendingExpenses, transactions } = useFinancial();
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const pendingExpenses = getPendingExpenses();
-  const totalBorrowed = borrowedAmounts.reduce((sum, borrow) => sum + borrow.amount, 0);
+  const totalBorrowed = transactions
+    .filter(t => t.type === 'borrow')
+    .reduce((sum, t) => sum + t.amount, 0);
   const isLow = amount < 100;
   const isVeryLow = amount < 50;
 
@@ -28,7 +30,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-lg font-medium text-white/90 mb-2">Free to Spend Today</h2>
-            <CurrencyDisplay amount={amount} className="text-4xl mb-1" />
+            <CurrencyDisplay amount={amount} className="text-4xl mb-1 text-white" />
             {isVeryLow && (
               <div className="flex items-center gap-2 text-orange-200">
                 <AlertTriangle className="w-4 h-4" />
@@ -44,15 +46,15 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         <div className="space-y-3 text-sm text-white/80">
           <div className="flex justify-between">
             <span>Current Balance</span>
-            <span className="font-medium">${balance.toLocaleString()}</span>
+            <span className="font-medium"><CurrencyDisplay amount={balance} className="text-white/80" /></span>
           </div>
           <div className="flex justify-between">
             <span>Reserved for Bills</span>
-            <span className="font-medium">-${reservedExpenses.toLocaleString()}</span>
+            <span className="font-medium">-<CurrencyDisplay amount={reservedExpenses} className="text-white/80" /></span>
           </div>
           <div className="flex justify-between">
             <span>Assigned Savings</span>
-            <span className="font-medium">-${assignedSavings.toLocaleString()}</span>
+            <span className="font-medium">-<CurrencyDisplay amount={assignedSavings} className="text-white/80" /></span>
           </div>
           
           {pendingExpenses > 0 && (
@@ -61,20 +63,20 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
                 <Clock className="w-3 h-3" />
                 Pending Expenses
               </span>
-              <span className="font-medium">${pendingExpenses.toLocaleString()}</span>
+              <span className="font-medium"><CurrencyDisplay amount={pendingExpenses} className="text-orange-200" /></span>
             </div>
           )}
 
           {totalBorrowed > 0 && (
             <div className="flex justify-between text-blue-200">
               <span>Previously Borrowed</span>
-              <span className="font-medium">+${totalBorrowed.toLocaleString()}</span>
+              <span className="font-medium">+<CurrencyDisplay amount={totalBorrowed} className="text-blue-200" /></span>
             </div>
           )}
           
           <div className="border-t border-white/20 pt-3 flex justify-between font-semibold text-white">
             <span>Available to Spend</span>
-            <span>${amount.toLocaleString()}</span>
+            <span><CurrencyDisplay amount={amount} className="text-white" /></span>
           </div>
         </div>
 

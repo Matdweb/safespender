@@ -3,8 +3,9 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, DollarSign, TrendingDown } from 'lucide-react';
+import { Trash2, DollarSign, TrendingDown, ArrowUpCircle } from 'lucide-react';
 import { Transaction } from '@/contexts/FinancialContext';
+import CurrencyDisplay from './CurrencyDisplay';
 
 interface TransactionsListProps {
   transactions: Transaction[];
@@ -13,6 +14,45 @@ interface TransactionsListProps {
 
 const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsListProps) => {
   const recentTransactions = transactions.slice(0, 10);
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'income':
+        return <DollarSign className="w-4 h-4" />;
+      case 'expense':
+        return <TrendingDown className="w-4 h-4" />;
+      case 'borrow':
+        return <ArrowUpCircle className="w-4 h-4" />;
+      default:
+        return <DollarSign className="w-4 h-4" />;
+    }
+  };
+
+  const getTransactionColor = (type: string) => {
+    switch (type) {
+      case 'income':
+        return 'bg-primary/10 text-primary';
+      case 'expense':
+        return 'bg-destructive/10 text-destructive';
+      case 'borrow':
+        return 'bg-blue-500/10 text-blue-600';
+      default:
+        return 'bg-primary/10 text-primary';
+    }
+  };
+
+  const getAmountColor = (type: string) => {
+    switch (type) {
+      case 'income':
+        return 'text-primary';
+      case 'expense':
+        return 'text-destructive';
+      case 'borrow':
+        return 'text-blue-600';
+      default:
+        return 'text-primary';
+    }
+  };
 
   return (
     <Card className="p-6 card-border">
@@ -41,19 +81,18 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
                 className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${
-                    transaction.type === 'income' 
-                      ? 'bg-primary/10 text-primary' 
-                      : 'bg-destructive/10 text-destructive'
-                  }`}>
-                    {transaction.type === 'income' ? (
-                      <DollarSign className="w-4 h-4" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4" />
-                    )}
+                  <div className={`p-2 rounded-full ${getTransactionColor(transaction.type)}`}>
+                    {getTransactionIcon(transaction.type)}
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{transaction.description}</p>
+                    <p className="font-medium text-sm">
+                      {transaction.description}
+                      {transaction.type === 'borrow' && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                          Advance
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(transaction.date).toLocaleDateString('en-US', {
                         month: 'short',
@@ -67,13 +106,9 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <span className={`font-semibold text-sm ${
-                    transaction.type === 'income' 
-                      ? 'text-primary' 
-                      : 'text-destructive'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}
-                    ${transaction.amount.toLocaleString()}
+                  <span className={`font-semibold text-sm ${getAmountColor(transaction.type)}`}>
+                    {transaction.type === 'expense' ? '-' : '+'}
+                    <CurrencyDisplay amount={transaction.amount} className="inline" />
                   </span>
                   <Button
                     size="sm"

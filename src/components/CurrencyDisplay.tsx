@@ -8,9 +8,10 @@ import { useFinancial } from '@/contexts/FinancialContext';
 interface CurrencyDisplayProps {
   amount: number;
   className?: string;
+  hideToggle?: boolean;
 }
 
-const CurrencyDisplay = ({ amount, className = '' }: CurrencyDisplayProps) => {
+const CurrencyDisplay = ({ amount, className = '', hideToggle = false }: CurrencyDisplayProps) => {
   const { currency, convertCurrency } = useFinancial();
   const [displayCurrency, setDisplayCurrency] = useState(currency);
 
@@ -25,6 +26,22 @@ const CurrencyDisplay = ({ amount, className = '' }: CurrencyDisplayProps) => {
 
   const displayAmount = displayCurrency === currency ? amount : convertCurrency(amount, displayCurrency);
   const symbol = symbols[displayCurrency as keyof typeof symbols] || '$';
+
+  // Check if this is an inline display (for use within other text)
+  const isInline = className.includes('inline');
+
+  if (isInline || hideToggle) {
+    return (
+      <span className={className.replace('inline', '').trim()}>
+        {symbol}{displayAmount.toLocaleString()}
+        {displayCurrency !== currency && (
+          <span className="text-xs opacity-70 ml-1">
+            ({displayCurrency})
+          </span>
+        )}
+      </span>
+    );
+  }
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
