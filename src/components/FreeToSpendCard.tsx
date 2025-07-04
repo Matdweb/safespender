@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, AlertTriangle, Clock, DollarSign } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TrendingUp, AlertTriangle, Clock, DollarSign, Globe } from 'lucide-react';
 import { useFinancial } from '@/contexts/FinancialContext';
 import CurrencyDisplay from './CurrencyDisplay';
 import EmergencyBorrowModal from './EmergencyBorrowModal';
@@ -15,8 +16,10 @@ interface FreeToSpendCardProps {
 }
 
 const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }: FreeToSpendCardProps) => {
-  const { getPendingExpenses, transactions } = useFinancial();
+  const { getPendingExpenses, transactions, currency, convertCurrency } = useFinancial();
   const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState(currency);
+  
   const pendingExpenses = getPendingExpenses();
   const totalBorrowed = transactions
     .filter(t => t.type === 'borrow')
@@ -24,13 +27,41 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
   const isLow = amount < 100;
   const isVeryLow = amount < 50;
 
+  const currencies = ['USD', 'EUR', 'CRC', 'GBP', 'CAD'];
+  const symbols = { USD: '$', EUR: '€', CRC: '₡', GBP: '£', CAD: 'C$' };
+
+  const convertAmount = (value: number) => 
+    displayCurrency === currency ? value : convertCurrency(value, displayCurrency);
+
+  const formatCurrency = (value: number) => {
+    const converted = convertAmount(value);
+    const symbol = symbols[displayCurrency as keyof typeof symbols] || '$';
+    return `${symbol}${converted.toLocaleString()}`;
+  };
+
   return (
     <>
       <Card className="p-8 income-gradient text-white shadow-lg hover-lift">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-medium text-white/90 mb-2">Free to Spend Today</h2>
-            <CurrencyDisplay amount={amount} className="text-4xl mb-1 text-white" />
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-lg font-medium text-white/90">Free to Spend Today</h2>
+              <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
+                <SelectTrigger className="w-20 h-8 bg-white/10 text-white border-white/20 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((curr) => (
+                    <SelectItem key={curr} value={curr}>
+                      {curr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="text-4xl mb-1 text-white font-bold">
+              {formatCurrency(amount)}
+            </div>
             {isVeryLow && (
               <div className="flex items-center gap-2 text-orange-200">
                 <AlertTriangle className="w-4 h-4" />
@@ -46,15 +77,15 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         <div className="space-y-3 text-sm text-white/80">
           <div className="flex justify-between">
             <span>Current Balance</span>
-            <span className="font-medium"><CurrencyDisplay amount={balance} className="text-white/80" /></span>
+            <span className="font-medium">{formatCurrency(balance)}</span>
           </div>
           <div className="flex justify-between">
             <span>Reserved for Bills</span>
-            <span className="font-medium">-<CurrencyDisplay amount={reservedExpenses} className="text-white/80" /></span>
+            <span className="font-medium">-{formatCurrency(reservedExpenses)}</span>
           </div>
           <div className="flex justify-between">
             <span>Assigned Savings</span>
-            <span className="font-medium">-<CurrencyDisplay amount={assignedSavings} className="text-white/80" /></span>
+            <span className="font-medium">-{formatCurrency(assignedSavings)}</span>
           </div>
           
           {pendingExpenses > 0 && (
@@ -63,20 +94,20 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
                 <Clock className="w-3 h-3" />
                 Pending Expenses
               </span>
-              <span className="font-medium"><CurrencyDisplay amount={pendingExpenses} className="text-orange-200" /></span>
+              <span className="font-medium">{formatCurrency(pendingExpenses)}</span>
             </div>
           )}
 
           {totalBorrowed > 0 && (
             <div className="flex justify-between text-blue-200">
               <span>Previously Borrowed</span>
-              <span className="font-medium">+<CurrencyDisplay amount={totalBorrowed} className="text-blue-200" /></span>
+              <span className="font-medium">+{formatCurrency(totalBorrowed)}</span>
             </div>
           )}
           
           <div className="border-t border-white/20 pt-3 flex justify-between font-semibold text-white">
             <span>Available to Spend</span>
-            <span><CurrencyDisplay amount={amount} className="text-white" /></span>
+            <span>{formatCurrency(amount)}</span>
           </div>
         </div>
 

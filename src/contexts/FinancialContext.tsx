@@ -387,22 +387,81 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     const today = new Date();
     const nextIncomeDate = getNextIncomeDate(transactions, today);
     
-    const allTransactions = [...transactions, ...generateRecurringTransactions(new Date(today.getFullYear(), 0, 1), today)];
-    const incomeToDate = allTransactions
+    // Calculate total income received up to today (including recurring)
+    const pastTransactions = generateRecurringTransactions(new Date(today.getFullYear(), 0, 1), today);
+    const allTransactionsToDate = [...transactions, ...pastTransactions];
+    const incomeToDate = allTransactionsToDate
       .filter(t => t.type === 'income' && new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
     
-    const endDate = nextIncomeDate || new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const periodExpenses = getPendingExpenses();
+    let reservedExpenses = 0;
+    let reservedSavings = 0;
     
-    const totalSavings = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+    if (nextIncomeDate) {
+      // If there's a next programmed income, only count expenses/savings before that date
+      console.log(`Next income date: ${nextIncomeDate.toDateString()}`);
+      
+      // Get future transactions up to next income date
+      const futureTransactions = generateRecurringTransactions(today, nextIncomeDate);
+      const allTransactionsUntilNextIncome = [...transactions, ...futureTransactions];
+      
+      // Count expenses scheduled before next income
+      reservedExpenses = allTransactionsUntilNextIncome
+        .filter(t => {
+          const transactionDate = new Date(t.date);
+          return t.type === 'expense' && 
+                 transactionDate > today && 
+                 transactionDate <= nextIncomeDate;
+        })
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      // Count savings contributions scheduled before next income
+      reservedSavings = goals
+        .filter(goal => goal.recurringContribution > 0)
+        .reduce((goalSum, goal) => {
+          // Calculate how many contributions happen before next income
+          const contributionsBeforeIncome = getContributionsBeforeDate(goal, today, nextIncomeDate);
+          return goalSum + (contributionsBeforeIncome * goal.recurringContribution);
+        }, 0);
+        
+    } else {
+      // No programmed income - subtract all current expenses and savings
+      console.log('No programmed income found, using all expenses/savings');
+      
+      // Use all reserved expenses
+      reservedExpenses = getReservedExpenses();
+      
+      // Use all current savings amounts
+      reservedSavings = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+    }
     
     // Include borrowed amounts as positive additions
     const totalBorrowed = transactions
       .filter(t => t.type === 'borrow')
       .reduce((sum, t) => sum + t.amount, 0);
     
-    return incomeToDate - periodExpenses - totalSavings + totalBorrowed;
+    const freeAmount = incomeToDate - reservedExpenses - reservedSavings + totalBorrowed;
+    console.log(`Free to spend calculation: ${incomeToDate} income - ${reservedExpenses} expenses - ${reservedSavings} savings + ${totalBorrowed} borrowed = ${freeAmount}`);
+    
+    return Math.max(0, freeAmount);
+  };
+
+  // Helper function to calculate savings contributions before a specific date
+  const getContributionsBeforeDate = (goal: Goal, fromDate: Date, toDate: Date): number => {
+    if (!goal.recurringContribution || goal.recurringContribution <= 0) return 0;
+    
+    const daysBetween = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    switch (goal.contributionFrequency) {
+      case 'weekly':
+        return Math.floor(daysBetween / 7);
+      case 'biweekly':
+        return Math.floor(daysBetween / 14);
+      case 'monthly':
+        return Math.floor(daysBetween / 30);
+      default:
+        return 0;
+    }
   };
 
   const completeOnboarding = () => {
