@@ -27,11 +27,13 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
     const today = new Date();
     const twoMonthsAhead = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
     
-    // Get recurring transactions
+    // Get ONLY recurring transactions (avoid duplication with base transactions)
     const recurringTransactions = generateRecurringTransactions(today, twoMonthsAhead);
     
-    // Convert to events format
-    const transactionEvents: Event[] = [...transactions, ...recurringTransactions]
+    console.log(`Upcoming events: ${recurringTransactions.length} recurring transactions generated`);
+    
+    // Convert to events format - ONLY use generated recurring transactions
+    const transactionEvents: Event[] = recurringTransactions
       .filter(t => {
         const eventDate = new Date(t.date);
         return eventDate >= today && eventDate <= twoMonthsAhead;
@@ -42,7 +44,22 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
         title: t.description,
         amount: t.amount,
         date: t.date,
-        recurring: !!t.recurring
+        recurring: true
+      }));
+
+    // Add any non-recurring future transactions
+    const futureOneTimeEvents: Event[] = transactions
+      .filter(t => {
+        const eventDate = new Date(t.date);
+        return !t.recurring && eventDate >= today && eventDate <= twoMonthsAhead;
+      })
+      .map(t => ({
+        id: t.id,
+        type: t.type === 'borrow' ? 'borrow' : t.type,
+        title: t.description,
+        amount: t.amount,
+        date: t.date,
+        recurring: false
       }));
 
     // Add savings contributions as events
@@ -80,10 +97,11 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
     });
 
     // Combine and sort all events by date
-    const allEvents = [...transactionEvents, ...savingsEvents]
+    const allEvents = [...transactionEvents, ...futureOneTimeEvents, ...savingsEvents]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 20); // Limit to first 20 events
 
+    console.log(`Total upcoming events: ${allEvents.length}`);
     return allEvents;
   }, [transactions, goals, generateRecurringTransactions]);
 

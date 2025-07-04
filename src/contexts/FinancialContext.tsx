@@ -14,6 +14,8 @@ export interface Transaction {
     interval: number;
     endDate?: string;
     dayOfMonth?: number;
+    occurrencesPerMonth?: number;
+    daysOfMonth?: number[];
   };
 }
 
@@ -231,73 +233,114 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     console.log(`Generating recurring transactions from ${startDate.toDateString()} to ${endDate.toDateString()}`);
     
     const generated: Transaction[] = [];
-    const recurringTransactions = transactions.filter(t => t.recurring && t.type !== 'borrow'); // Don't make borrowed amounts recurring
+    const recurringTransactions = transactions.filter(t => t.recurring && t.type !== 'borrow');
     
     console.log(`Found ${recurringTransactions.length} base recurring transactions`);
     
     recurringTransactions.forEach(transaction => {
-      const { type, interval, dayOfMonth } = transaction.recurring!;
+      const { type, interval, dayOfMonth, daysOfMonth, occurrencesPerMonth } = transaction.recurring!;
       const baseDate = new Date(transaction.date);
       
-      let currentDate = new Date(Math.max(baseDate.getTime(), startDate.getTime()));
-      
-      if (dayOfMonth && type === 'monthly') {
-        const validDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
-        currentDate.setDate(validDay);
+      // Handle multiple days per month (e.g., 15th and 30th)
+      if (daysOfMonth && daysOfMonth.length > 0) {
+        const startMonth = startDate.getMonth();
+        const startYear = startDate.getFullYear();
+        const endMonth = endDate.getMonth();
+        const endYear = endDate.getFullYear();
         
-        if (currentDate < startDate) {
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          const nextValidDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
-          currentDate.setDate(nextValidDay);
-        }
-      }
-      
-      let iterationCount = 0;
-      const maxIterations = 100;
-      
-      while (currentDate <= endDate && iterationCount < maxIterations) {
-        if (currentDate >= startDate && currentDate > baseDate) {
-          const generatedId = `${transaction.id}-recurring-${currentDate.getTime()}`;
-          if (!generated.find(g => g.id === generatedId)) {
-            // Adjust amount if this income has borrowed amounts against it
-            let adjustedAmount = transaction.amount;
-            if (transaction.type === 'income') {
-              const borrowedAgainstThis = transactions
-                .filter(t => t.type === 'borrow' && t.borrowedFromIncomeId === transaction.id)
-                .reduce((sum, t) => sum + t.amount, 0);
-              adjustedAmount = Math.max(0, transaction.amount - borrowedAgainstThis);
-            }
-            
-            generated.push({
-              ...transaction,
-              id: generatedId,
-              amount: adjustedAmount,
-              date: currentDate.toISOString().split('T')[0],
+        // Generate for each month in range
+        for (let year = startYear; year <= endYear; year++) {
+          const monthStart = year === startYear ? startMonth : 0;
+          const monthEnd = year === endYear ? endMonth : 11;
+          
+          for (let month = monthStart; month <= monthEnd; month++) {
+            daysOfMonth.forEach(day => {
+              const validDay = getValidDayForMonth(day, month, year);
+              const occurrenceDate = new Date(year, month, validDay);
+              
+              if (occurrenceDate >= startDate && occurrenceDate <= endDate && occurrenceDate > baseDate) {
+                // Calculate adjusted amount for income with borrowed amounts
+                let adjustedAmount = transaction.amount;
+                if (transaction.type === 'income') {
+                  const borrowedAgainstThis = transactions
+                    .filter(t => t.type === 'borrow' && t.borrowedFromIncomeId === transaction.id)
+                    .reduce((sum, t) => sum + t.amount, 0);
+                  adjustedAmount = Math.max(0, transaction.amount - borrowedAgainstThis);
+                }
+                
+                const generatedId = `${transaction.id}-recurring-${occurrenceDate.getTime()}`;
+                generated.push({
+                  ...transaction,
+                  id: generatedId,
+                  amount: adjustedAmount,
+                  date: occurrenceDate.toISOString().split('T')[0],
+                });
+              }
             });
           }
         }
+      } else {
+        // Handle single day recurring transactions
+        let currentDate = new Date(Math.max(baseDate.getTime(), startDate.getTime()));
         
-        const nextDate = new Date(currentDate);
-        switch (type) {
-          case 'weekly':
-            nextDate.setDate(nextDate.getDate() + (7 * interval));
-            break;
-          case 'biweekly':
-            nextDate.setDate(nextDate.getDate() + (14 * interval));
-            break;
-          case 'monthly':
-            const originalDay = dayOfMonth || nextDate.getDate();
-            nextDate.setMonth(nextDate.getMonth() + interval);
-            const validDay = getValidDayForMonth(originalDay, nextDate.getMonth(), nextDate.getFullYear());
-            nextDate.setDate(validDay);
-            break;
+        if (dayOfMonth && type === 'monthly') {
+          const validDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
+          currentDate.setDate(validDay);
+          
+          if (currentDate < startDate) {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            const nextValidDay = getValidDayForMonth(dayOfMonth, currentDate.getMonth(), currentDate.getFullYear());
+            currentDate.setDate(nextValidDay);
+          }
         }
-        currentDate = nextDate;
-        iterationCount++;
-      }
-      
-      if (iterationCount >= maxIterations) {
-        console.warn(`Max iterations reached for transaction: ${transaction.description}`);
+        
+        let iterationCount = 0;
+        const maxIterations = 200; // Increased for better coverage
+        
+        while (currentDate <= endDate && iterationCount < maxIterations) {
+          if (currentDate >= startDate && currentDate > baseDate) {
+            const generatedId = `${transaction.id}-recurring-${currentDate.getTime()}`;
+            if (!generated.find(g => g.id === generatedId)) {
+              // Calculate adjusted amount for income with borrowed amounts
+              let adjustedAmount = transaction.amount;
+              if (transaction.type === 'income') {
+                const borrowedAgainstThis = transactions
+                  .filter(t => t.type === 'borrow' && t.borrowedFromIncomeId === transaction.id)
+                  .reduce((sum, t) => sum + t.amount, 0);
+                adjustedAmount = Math.max(0, transaction.amount - borrowedAgainstThis);
+              }
+              
+              generated.push({
+                ...transaction,
+                id: generatedId,
+                amount: adjustedAmount,
+                date: currentDate.toISOString().split('T')[0],
+              });
+            }
+          }
+          
+          const nextDate = new Date(currentDate);
+          switch (type) {
+            case 'weekly':
+              nextDate.setDate(nextDate.getDate() + (7 * interval));
+              break;
+            case 'biweekly':
+              nextDate.setDate(nextDate.getDate() + (14 * interval));
+              break;
+            case 'monthly':
+              const originalDay = dayOfMonth || nextDate.getDate();
+              nextDate.setMonth(nextDate.getMonth() + interval);
+              const validDay = getValidDayForMonth(originalDay, nextDate.getMonth(), nextDate.getFullYear());
+              nextDate.setDate(validDay);
+              break;
+          }
+          currentDate = nextDate;
+          iterationCount++;
+        }
+        
+        if (iterationCount >= maxIterations) {
+          console.warn(`Max iterations reached for transaction: ${transaction.description}`);
+        }
       }
     });
     

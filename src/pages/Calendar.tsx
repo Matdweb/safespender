@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import CalendarView from '@/components/calendar/CalendarView';
@@ -22,32 +23,39 @@ const Calendar = () => {
     generateRecurringTransactions 
   } = useFinancial();
 
-  // Convert transactions to calendar items and include recurring ones + savings
+  // Convert transactions to calendar items - AVOID DUPLICATION
   const calendarItems: CalendarItem[] = React.useMemo(() => {
-    // Get base transactions
-    const baseItems = transactions.map(t => ({
-      id: t.id,
-      type: t.type,
-      title: t.description,
-      amount: t.amount,
-      date: t.date,
-      category: t.category,
-      description: t.description,
-      recurring: t.recurring ? {
-        frequency: t.recurring.type === 'biweekly' ? 'monthly' as const : t.recurring.type,
-        interval: t.recurring.interval
-      } : undefined
-    }));
+    console.log('Recalculating calendar items...');
+    
+    // Get calendar view range (3 months forward and 1 month back for context)
+    const startOfRange = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const endOfRange = new Date(currentDate.getFullYear(), currentDate.getMonth() + 3, 0);
+    
+    console.log(`Calendar range: ${startOfRange.toDateString()} to ${endOfRange.toDateString()}`);
+    
+    // Get ONLY non-recurring base transactions that fall within our view range
+    const baseTransactionsInRange = transactions
+      .filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate >= startOfRange && 
+               transactionDate <= endOfRange && 
+               !t.recurring; // Only non-recurring base transactions
+      })
+      .map(t => ({
+        id: t.id,
+        type: t.type,
+        title: t.description,
+        amount: t.amount,
+        date: t.date,
+        category: t.category,
+        description: t.description,
+      }));
 
-    // Generate recurring transactions for a limited period (3 months ahead only)
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfPeriod = new Date(currentDate.getFullYear(), currentDate.getMonth() + 3, 0);
+    // Generate recurring transactions for the view range
+    const recurringTransactions = generateRecurringTransactions(startOfRange, endOfRange);
     
-    console.log(`Generating recurring transactions from ${startOfMonth.toDateString()} to ${endOfPeriod.toDateString()}`);
-    
-    const recurringTransactions = generateRecurringTransactions(startOfMonth, endOfPeriod);
-    
-    console.log(`Generated ${recurringTransactions.length} recurring transactions`);
+    console.log(`Base transactions in range: ${baseTransactionsInRange.length}`);
+    console.log(`Generated recurring transactions: ${recurringTransactions.length}`);
     
     const recurringItems = recurringTransactions.map(t => ({
       id: t.id,
@@ -67,27 +75,28 @@ const Calendar = () => {
     const savingsItems: CalendarItem[] = [];
     goals.forEach(goal => {
       if (goal.recurringContribution > 0) {
-        // Generate savings contributions for the same period
+        // Generate savings contributions for the view range
         const today = new Date();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
         
-        for (let monthOffset = 0; monthOffset <= 3; monthOffset++) {
+        // Generate for each month in the range
+        for (let monthOffset = -1; monthOffset <= 3; monthOffset++) {
           const contributionDate = new Date(currentYear, currentMonth + monthOffset, 1);
           
           // Adjust based on contribution frequency
           if (goal.contributionFrequency === 'monthly') {
-            contributionDate.setDate(1); // First day of month for simplicity
+            contributionDate.setDate(1);
           } else if (goal.contributionFrequency === 'biweekly') {
-            contributionDate.setDate(15); // Mid-month for biweekly
+            contributionDate.setDate(15);
           } else if (goal.contributionFrequency === 'weekly') {
-            contributionDate.setDate(7); // Weekly approximation
+            contributionDate.setDate(7);
           }
           
-          if (contributionDate >= startOfMonth && contributionDate <= endOfPeriod) {
+          if (contributionDate >= startOfRange && contributionDate <= endOfRange) {
             savingsItems.push({
               id: `savings-${goal.id}-${contributionDate.getTime()}`,
-              type: 'expense' as const, // Treat savings as expenses
+              type: 'expense' as const,
               title: `💰 ${goal.name} Savings`,
               amount: goal.recurringContribution,
               date: contributionDate.toISOString().split('T')[0],
@@ -99,7 +108,7 @@ const Calendar = () => {
       }
     });
 
-    const allItems = [...baseItems, ...recurringItems, ...savingsItems];
+    const allItems = [...baseTransactionsInRange, ...recurringItems, ...savingsItems];
     console.log(`Total calendar items: ${allItems.length}`);
     
     return allItems;
