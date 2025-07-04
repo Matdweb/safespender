@@ -45,7 +45,7 @@ const Calendar = () => {
       })
       .map(t => ({
         id: t.id,
-        type: t.type === 'savings' ? 'expense' as const : t.type, // Display savings as expenses
+        type: t.type, // Keep original type including savings
         title: t.description,
         amount: t.amount,
         date: t.date,
@@ -73,7 +73,7 @@ const Calendar = () => {
       }
     }));
 
-    // Add savings contributions as calendar items (treated like expenses)
+    // Add savings contributions as calendar items
     const savingsItems: CalendarItem[] = [];
     goals.forEach(goal => {
       if (goal.recurringContribution > 0) {
@@ -98,7 +98,7 @@ const Calendar = () => {
           if (contributionDate >= startOfRange && contributionDate <= endOfRange) {
             savingsItems.push({
               id: `savings-${goal.id}-${contributionDate.getTime()}`,
-              type: 'expense' as const,
+              type: 'savings' as const,
               title: `💰 ${goal.name} Savings`,
               amount: goal.recurringContribution,
               date: contributionDate.toISOString().split('T')[0],
@@ -137,7 +137,7 @@ const Calendar = () => {
   const handleAddItem = (item: Omit<CalendarItem, 'id'>) => {
     console.log('Adding new transaction:', item.title, item.amount);
     addTransaction({
-      type: item.type,
+      type: item.type === 'savings' ? 'savings' : item.type,
       amount: item.amount,
       description: item.title,
       date: item.date,
