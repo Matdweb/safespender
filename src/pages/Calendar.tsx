@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import CalendarView from '@/components/calendar/CalendarView';
@@ -7,6 +6,7 @@ import AddItemModal from '@/components/calendar/AddItemModal';
 import ViewDayModal from '@/components/calendar/ViewDayModal';
 import { CalendarItem } from '@/types/calendar';
 import { useFinancial } from '@/contexts/FinancialContext';
+import AddSavingsDialog from '@/components/AddSavingsDialog';
 
 const Calendar = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -14,13 +14,15 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showAddSavingsModal, setShowAddSavingsModal] = useState(false);
 
   const { 
     transactions, 
     goals,
     addTransaction, 
     deleteTransaction, 
-    generateRecurringTransactions 
+    generateRecurringTransactions,
+    addSavingsContribution
   } = useFinancial();
 
   // Convert transactions to calendar items - AVOID DUPLICATION
@@ -43,7 +45,7 @@ const Calendar = () => {
       })
       .map(t => ({
         id: t.id,
-        type: t.type,
+        type: t.type === 'savings' ? 'expense' as const : t.type, // Display savings as expenses
         title: t.description,
         amount: t.amount,
         date: t.date,
@@ -160,6 +162,12 @@ const Calendar = () => {
     );
   };
 
+  const handleAddSavings = (savings: { goalId: string; amount: number; description: string }) => {
+    console.log('Adding savings contribution:', savings.description, savings.amount);
+    addSavingsContribution(savings.goalId, savings.amount, savings.description, true);
+    setShowAddSavingsModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
       <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
@@ -198,6 +206,13 @@ const Calendar = () => {
           setShowViewModal(false);
           setShowAddModal(true);
         }}
+      />
+
+      <AddSavingsDialog
+        open={showAddSavingsModal}
+        onOpenChange={setShowAddSavingsModal}
+        selectedDate={selectedDate}
+        onAddSavings={handleAddSavings}
       />
     </div>
   );

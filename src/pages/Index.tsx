@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import FreeToSpendCard from '@/components/FreeToSpendCard';
@@ -11,11 +10,13 @@ import AddExpenseDialog from '@/components/AddExpenseDialog';
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
 import { useToast } from '@/hooks/use-toast';
 import { useFinancial } from '@/contexts/FinancialContext';
+import AddSavingsDialog from '@/components/AddSavingsDialog';
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  const [showSavingsDialog, setShowSavingsDialog] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -29,7 +30,8 @@ const Index = () => {
     getFreeToSpend,
     generateRecurringTransactions,
     isFirstTimeUser,
-    completeOnboarding
+    completeOnboarding,
+    addSavingsContribution
   } = useFinancial();
 
   // Generate upcoming events from recurring transactions
@@ -118,6 +120,15 @@ const Index = () => {
     });
   };
 
+  const handleAddSavings = (savings: { goalId: string; amount: number; description: string }) => {
+    addSavingsContribution(savings.goalId, savings.amount, savings.description, true);
+    
+    toast({
+      title: "Savings Added!",
+      description: `$${savings.amount.toLocaleString()} added to your savings goal`,
+    });
+  };
+
   useEffect(() => {
     document.body.classList.add('animate-fade-in');
   }, []);
@@ -152,6 +163,7 @@ const Index = () => {
           <QuickActions
             onAddIncome={() => setShowIncomeDialog(true)}
             onAddExpense={() => setShowExpenseDialog(true)}
+            onAddSavings={() => setShowSavingsDialog(true)}
             onViewCalendar={() => toast({ title: "Calendar", description: "Click the Calendar link in the header" })}
             onViewGoals={() => toast({ title: "Goals", description: "Click the Goals link in the header" })}
           />
@@ -198,6 +210,12 @@ const Index = () => {
         open={showExpenseDialog}
         onOpenChange={setShowExpenseDialog}
         onAddExpense={handleAddExpense}
+      />
+
+      <AddSavingsDialog
+        open={showSavingsDialog}
+        onOpenChange={setShowSavingsDialog}
+        onAddSavings={handleAddSavings}
       />
 
       {/* Onboarding Flow */}

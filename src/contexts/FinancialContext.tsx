@@ -2,13 +2,15 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export interface Transaction {
   id: string;
-  type: 'income' | 'expense' | 'borrow';
+  type: 'income' | 'expense' | 'borrow' | 'savings';
   amount: number;
   description: string;
   date: string;
   category?: string;
   isReserved?: boolean;
   borrowedFromIncomeId?: string;
+  goalId?: string; // For savings contributions
+  isExtraContribution?: boolean; // Flag for manual contributions
   recurring?: {
     type: 'weekly' | 'monthly' | 'biweekly';
     interval: number;
@@ -62,6 +64,7 @@ interface FinancialContextType {
   getPendingExpenses: () => number;
   isFirstTimeUser: boolean;
   completeOnboarding: () => void;
+  addSavingsContribution: (goalId: string, amount: number, description: string, isExtra?: boolean) => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -192,6 +195,30 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       date: new Date().toISOString().split('T')[0],
     };
     setBorrowedAmounts(prev => [...prev, newBorrow]);
+  };
+
+  const addSavingsContribution = (goalId: string, amount: number, description: string, isExtra: boolean = false) => {
+    // Add as transaction
+    const savingsTransaction: Omit<Transaction, 'id'> = {
+      type: 'savings',
+      amount,
+      description,
+      date: new Date().toISOString().split('T')[0],
+      category: 'savings',
+      goalId,
+      isExtraContribution: isExtra
+    };
+    
+    addTransaction(savingsTransaction);
+    
+    // Update the goal's current amount
+    setGoals(prev => prev.map(goal => 
+      goal.id === goalId 
+        ? { ...goal, currentAmount: goal.currentAmount + amount }
+        : goal
+    ));
+    
+    console.log(`Added ${isExtra ? 'extra' : 'regular'} savings contribution: $${amount} to goal ${goalId}`);
   };
 
   const convertCurrency = (amount: number, toCurrency: string): number => {
@@ -440,8 +467,13 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       .filter(t => t.type === 'borrow')
       .reduce((sum, t) => sum + t.amount, 0);
     
-    const freeAmount = incomeToDate - reservedExpenses - reservedSavings + totalBorrowed;
-    console.log(`Free to spend calculation: ${incomeToDate} income - ${reservedExpenses} expenses - ${reservedSavings} savings + ${totalBorrowed} borrowed = ${freeAmount}`);
+    // Subtract all savings contributions that have been made
+    const totalSavingsContributions = transactions
+      .filter(t => t.type === 'savings')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const freeAmount = incomeToDate - reservedExpenses - reservedSavings + totalBorrowed - totalSavingsContributions;
+    console.log(`Free to spend calculation: ${incomeToDate} income - ${reservedExpenses} expenses - ${reservedSavings} savings + ${totalBorrowed} borrowed - ${totalSavingsContributions} contributions = ${freeAmount}`);
     
     return Math.max(0, freeAmount);
   };
@@ -508,6 +540,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       getPendingExpenses,
       isFirstTimeUser,
       completeOnboarding,
+      addSavingsContribution,
     }}>
       {children}
     </FinancialContext.Provider>

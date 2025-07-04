@@ -1,17 +1,18 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Plus, TrendingUp, Calendar, Target } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, Target, PiggyBank } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface QuickActionsProps {
   onAddIncome: () => void;
   onAddExpense: () => void;
+  onAddSavings: () => void;
   onViewCalendar: () => void;
   onViewGoals: () => void;
 }
 
-const QuickActions = ({ onAddIncome, onAddExpense, onViewCalendar, onViewGoals }: QuickActionsProps) => {
+const QuickActions = ({ onAddIncome, onAddExpense, onAddSavings, onViewCalendar, onViewGoals }: QuickActionsProps) => {
   const navigate = useNavigate();
 
   const handleCalendarClick = () => {
@@ -23,7 +24,7 @@ const QuickActions = ({ onAddIncome, onAddExpense, onViewCalendar, onViewGoals }
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={onAddIncome}>
         <div className="flex flex-col items-center text-center gap-3">
           <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -44,6 +45,18 @@ const QuickActions = ({ onAddIncome, onAddExpense, onViewCalendar, onViewGoals }
           <div>
             <h3 className="font-semibold text-sm">Add Expense</h3>
             <p className="text-xs text-muted-foreground">Track spending</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={onAddSavings}>
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center">
+            <PiggyBank className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm">Add Savings</h3>
+            <p className="text-xs text-muted-foreground">Extra contribution</p>
           </div>
         </div>
       </Card>
