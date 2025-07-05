@@ -7,8 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarItem } from '@/types/calendar';
-import { DollarSign, TrendingDown } from 'lucide-react';
+import { DollarSign, TrendingDown, Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface AddItemModalProps {
   open: boolean;
@@ -18,42 +22,90 @@ interface AddItemModalProps {
 }
 
 const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemModalProps) => {
-  const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [type, setType] = useState<'income' | 'expense' | 'savings'>('expense');
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
+  const [amount2, setAmount2] = useState(''); // For bi-weekly second paycheck
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
-  const [frequency, setFrequency] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [frequency, setFrequency] = useState<'weekly' | 'monthly' | 'yearly' | 'biweekly'>('monthly');
   const [interval, setInterval] = useState(1);
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const resetForm = () => {
     setType('expense');
     setTitle('');
     setAmount('');
+    setAmount2('');
     setCategory('');
     setDescription('');
     setIsRecurring(false);
     setFrequency('monthly');
     setInterval(1);
+    setCustomDate(undefined);
+    setShowDatePicker(false);
+  };
+
+  // Helper function to format date properly without timezone issues
+  const formatDateForStorage = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !amount || !selectedDate) return;
+    if (!title || !amount) return;
+    
+    const targetDate = customDate || selectedDate;
+    if (!targetDate) return;
 
-    const item: Omit<CalendarItem, 'id'> = {
-      type,
-      title,
-      amount: parseFloat(amount),
-      date: selectedDate.toISOString().split('T')[0],
-      category: category || undefined,
-      description: description || undefined,
-      recurring: isRecurring ? { frequency, interval } : undefined,
-    };
+    // Handle bi-weekly with two amounts
+    if (frequency === 'biweekly' && isRecurring && amount2) {
+      // Create two transactions for bi-weekly payments
+      const item1: Omit<CalendarItem, 'id'> = {
+        type,
+        title: `${title} (1st)`,
+        amount: parseFloat(amount),
+        date: formatDateForStorage(targetDate),
+        category: category || undefined,
+        description: description || undefined,
+        recurring: { frequency: 'biweekly', interval },
+      };
+      
+      const secondDate = new Date(targetDate);
+      secondDate.setDate(secondDate.getDate() + 14);
+      
+      const item2: Omit<CalendarItem, 'id'> = {
+        type,
+        title: `${title} (2nd)`,
+        amount: parseFloat(amount2),
+        date: formatDateForStorage(secondDate),
+        category: category || undefined,
+        description: description || undefined,
+        recurring: { frequency: 'biweekly', interval },
+      };
+      
+      onAddItem(item1);
+      onAddItem(item2);
+    } else {
+      const item: Omit<CalendarItem, 'id'> = {
+        type,
+        title,
+        amount: parseFloat(amount),
+        date: formatDateForStorage(targetDate),
+        category: category || undefined,
+        description: description || undefined,
+        recurring: isRecurring ? { frequency, interval } : undefined,
+      };
 
-    onAddItem(item);
+      onAddItem(item);
+    }
+    
     resetForm();
     onOpenChange(false);
   };
@@ -61,6 +113,7 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
   const typeOptions = [
     { value: 'income', label: 'Income', icon: DollarSign, color: 'text-primary' },
     { value: 'expense', label: 'Expense', icon: TrendingDown, color: 'text-destructive' },
+    { value: 'savings', label: 'Savings', icon: DollarSign, color: 'text-blue-600' },
   ];
 
   return (
@@ -86,7 +139,7 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
           {/* Type Selection */}
           <div className="space-y-3">
             <Label>Type</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {typeOptions.map(option => {
                 const Icon = option.icon;
                 return (
@@ -117,9 +170,42 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
             />
           </div>
 
+          {/* Date Picker for Programming */}
+          <div className="space-y-2">
+            <Label>Scheduled For</Label>
+            <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !customDate && !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customDate ? format(customDate, "PPP") : 
+                   selectedDate ? format(selectedDate, "PPP") : 
+                   <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customDate || selectedDate || undefined}
+                  onSelect={(date) => {
+                    setCustomDate(date);
+                    setShowDatePicker(false);
+                  }}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* Amount */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="amount">Amount{frequency === 'biweekly' && isRecurring ? ' (1st Payment)' : ''}</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
               <Input
@@ -135,6 +221,29 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
               />
             </div>
           </div>
+
+          {/* Second Amount for Bi-weekly */}
+          {frequency === 'biweekly' && isRecurring && (
+            <div className="space-y-2">
+              <Label htmlFor="amount2">Amount (2nd Payment)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                <Input
+                  id="amount2"
+                  type="number"
+                  value={amount2}
+                  onChange={(e) => setAmount2(e.target.value)}
+                  placeholder="0.00"
+                  className="pl-8"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Leave empty if both payments are the same amount
+              </p>
+            </div>
+          )}
 
           {/* Category */}
           <div className="space-y-2">
@@ -169,6 +278,7 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly">Bi-weekly</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
                     <SelectItem value="yearly">Yearly</SelectItem>
                   </SelectContent>

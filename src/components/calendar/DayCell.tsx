@@ -17,8 +17,8 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
 
   const incomeItems = items.filter(item => item.type === 'income');
   const expenseItems = items.filter(item => item.type === 'expense');
-  const savingsItems = expenseItems.filter(item => item.category === 'savings');
-  const normalExpenseItems = expenseItems.filter(item => item.category !== 'savings');
+  const savingsItems = items.filter(item => item.type === 'savings');
+  const borrowItems = items.filter(item => item.type === 'borrow');
 
   const getNetFlowColor = () => {
     if (netFlow > 0) return 'text-primary';
@@ -55,13 +55,17 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-primary flex-shrink-0" 
                title={`${incomeItems.length} income item(s)`} />
         )}
-        {normalExpenseItems.length > 0 && (
+        {expenseItems.length > 0 && (
           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-destructive flex-shrink-0"
-               title={`${normalExpenseItems.length} expense item(s)`} />
+               title={`${expenseItems.length} expense item(s)`} />
         )}
         {savingsItems.length > 0 && (
           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-blue-600 flex-shrink-0"
                title={`${savingsItems.length} savings item(s)`} />
+        )}
+        {borrowItems.length > 0 && (
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-orange-500 flex-shrink-0"
+               title={`${borrowItems.length} borrow item(s)`} />
         )}
       </div>
 
@@ -108,7 +112,8 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
               <span className={cn(
                 'font-medium',
                 item.type === 'income' ? 'text-primary' : 
-                item.category === 'savings' ? 'text-blue-600' : 'text-destructive'
+                item.type === 'savings' ? 'text-blue-600' : 
+                item.type === 'borrow' ? 'text-orange-500' : 'text-destructive'
               )}>
                 {item.type === 'income' ? '+' : '-'}${item.amount.toLocaleString()}
               </span>

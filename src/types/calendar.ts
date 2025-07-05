@@ -6,7 +6,7 @@ export interface CalendarItem {
   amount: number;
   date: string;
   recurring?: {
-    frequency: 'weekly' | 'monthly' | 'yearly';
+    frequency: 'weekly' | 'monthly' | 'yearly' | 'biweekly';
     interval: number;
   };
   category?: string;

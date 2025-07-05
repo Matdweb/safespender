@@ -101,7 +101,7 @@ const Calendar = () => {
               type: 'savings' as const,
               title: `💰 ${goal.name} Savings`,
               amount: goal.recurringContribution,
-              date: contributionDate.toISOString().split('T')[0],
+              date: `${contributionDate.getFullYear()}-${String(contributionDate.getMonth() + 1).padStart(2, '0')}-${String(contributionDate.getDate()).padStart(2, '0')}`,
               category: 'savings',
               description: `Savings contribution to ${goal.name}`,
             });
@@ -145,6 +145,7 @@ const Calendar = () => {
       recurring: item.recurring ? {
         type: item.recurring.frequency === 'weekly' ? 'weekly' : 
               item.recurring.frequency === 'yearly' ? 'monthly' :
+              item.recurring.frequency === 'biweekly' ? 'biweekly' :
               item.recurring.frequency,
         interval: item.recurring.interval
       } : undefined

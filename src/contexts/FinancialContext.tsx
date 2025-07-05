@@ -300,7 +300,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
                   ...transaction,
                   id: generatedId,
                   amount: adjustedAmount,
-                  date: occurrenceDate.toISOString().split('T')[0],
+                  date: `${occurrenceDate.getFullYear()}-${String(occurrenceDate.getMonth() + 1).padStart(2, '0')}-${String(occurrenceDate.getDate()).padStart(2, '0')}`,
                 });
               }
             });
@@ -341,7 +341,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
                 ...transaction,
                 id: generatedId,
                 amount: adjustedAmount,
-                date: currentDate.toISOString().split('T')[0],
+                date: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`,
               });
             }
           }
