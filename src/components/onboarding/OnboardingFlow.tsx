@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import WelcomeStep from './WelcomeStep';
 import CurrencyStep from './CurrencyStep';
-import IncomeStep from './IncomeStep';
+import SalaryStep from './SalaryStep';
 import ExpensesStep from './ExpensesStep';
 import GoalsStep from './GoalsStep';
 import SummaryStep from './SummaryStep';
@@ -18,12 +18,14 @@ interface OnboardingFlowProps {
 
 export type OnboardingData = {
   currency?: string;
-  incomes?: Array<{
-    amount: number;
-    date: string;
-    frequency: 'one-time' | 'weekly' | 'biweekly' | 'monthly';
-    description: string;
-  }>;
+  salary?: {
+    frequency: 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+    daysOfMonth: number[];
+    quarterlyAmounts: Array<{
+      quarter: string;
+      amount: number;
+    }>;
+  };
   expenses: Array<{
     description: string;
     amount: number;
@@ -53,7 +55,7 @@ const OnboardingFlow = ({ open, onComplete }: OnboardingFlowProps) => {
   const steps = [
     { component: WelcomeStep, title: 'Welcome' },
     { component: CurrencyStep, title: 'Currency' },
-    { component: IncomeStep, title: 'Income' },
+    { component: SalaryStep, title: 'Salary' },
     { component: ExpensesStep, title: 'Expenses' },
     { component: GoalsStep, title: 'Goals' },
     { component: SummaryStep, title: 'Summary' }

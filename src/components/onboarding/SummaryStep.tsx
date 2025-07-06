@@ -34,21 +34,32 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
         setCurrency(data.currency);
       }
 
-      // Add income transactions
-      if (data.incomes) {
-        data.incomes.forEach((income, index) => {
-          console.log(`Creating income ${index + 1}:`, income.description, income.amount);
-          addTransaction({
-            type: 'income',
-            amount: income.amount,
-            description: income.description,
-            date: income.date,
-            recurring: income.frequency !== 'one-time' ? {
-              type: income.frequency === 'biweekly' ? 'biweekly' : 
-                    income.frequency === 'weekly' ? 'weekly' : 'monthly',
-              interval: 1
-            } : undefined
-          });
+      // Add salary configuration
+      if (data.salary) {
+        // Calculate next income dates based on salary configuration
+        const today = new Date();
+        data.salary.daysOfMonth.forEach(dayOfMonth => {
+          // Get current quarter to determine amount
+          const currentQuarter = `Q${Math.ceil((today.getMonth() + 1) / 3)}`;
+          const quarterData = data.salary!.quarterlyAmounts.find(q => q.quarter === currentQuarter);
+          const amount = quarterData?.amount || data.salary!.quarterlyAmounts[0]?.amount || 0;
+          
+          if (amount > 0) {
+            console.log(`Creating salary income: $${amount} on day ${dayOfMonth}`);
+            addTransaction({
+              type: 'income',
+              amount: amount,
+              description: `Salary - ${currentQuarter}`,
+              date: today.toISOString().split('T')[0],
+              recurring: {
+                type: data.salary.frequency === 'weekly' ? 'weekly' : 
+                      data.salary.frequency === 'biweekly' ? 'biweekly' : 'monthly',
+                interval: 1,
+                dayOfMonth: dayOfMonth,
+                daysOfMonth: data.salary.daysOfMonth
+              }
+            });
+          }
         });
       }
 
@@ -104,7 +115,9 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
     handleFinish();
   }, []); // Empty dependency array - only run once
 
-  const totalIncome = data.incomes ? data.incomes.reduce((sum, inc) => sum + inc.amount, 0) : 0;
+  const totalIncome = data.salary 
+    ? data.salary.quarterlyAmounts.reduce((sum, q) => sum + q.amount, 0) 
+    : 0;
   const totalExpenses = data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const goalContribution = data.goal ? data.goal.recurringContribution : 0;
   const freeToSpend = totalIncome - totalExpenses - goalContribution;
@@ -138,18 +151,20 @@ const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
           </p>
         </Card>
 
-        {/* Income Summary */}
-        {data.incomes && data.incomes.length > 0 && (
+        {/* Salary Summary */}
+        {data.salary && (
           <Card className="p-4">
             <div className="flex items-center gap-3 mb-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              <h4 className="font-medium">Income Setup</h4>
+              <h4 className="font-medium">Salary Setup</h4>
             </div>
             <div className="space-y-1">
-              {data.incomes.map((income, index) => (
-                <p key={index} className="text-sm text-muted-foreground">
-                  ${income.amount.toLocaleString()} • {income.description}
-                  {income.frequency !== 'one-time' && ` • ${income.frequency}`}
+              <p className="text-sm text-muted-foreground">
+                Paid {data.salary.frequency} on day(s): {data.salary.daysOfMonth.join(', ')}
+              </p>
+              {data.salary.quarterlyAmounts.map((q) => (
+                <p key={q.quarter} className="text-sm text-muted-foreground">
+                  {q.quarter}: ${q.amount.toLocaleString()} per paycheck
                 </p>
               ))}
             </div>

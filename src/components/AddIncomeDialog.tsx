@@ -14,8 +14,6 @@ interface AddIncomeDialogProps {
   onAddIncome: (income: {
     amount: number;
     date: string;
-    frequency: string;
-    allocation: string;
     description: string;
   }) => void;
 }
@@ -23,8 +21,6 @@ interface AddIncomeDialogProps {
 const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogProps) => {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [frequency, setFrequency] = useState('one-time');
-  const [allocation, setAllocation] = useState('free-spend');
   const [description, setDescription] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,16 +31,12 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
     onAddIncome({
       amount: parseFloat(amount),
       date,
-      frequency,
-      allocation,
-      description: description || 'Income'
+      description: description || 'One-time Income'
     });
 
     // Reset form
     setAmount('');
     setDate(new Date().toISOString().split('T')[0]);
-    setFrequency('one-time');
-    setAllocation('free-spend');
     setDescription('');
     onOpenChange(false);
   };
@@ -101,37 +93,10 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
             />
           </div>
 
-          <div className="space-y-3">
-            <Label>Frequency</Label>
-            <Select value={frequency} onValueChange={setFrequency}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="one-time">One-time</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Allocate to</Label>
-            <RadioGroup value={allocation} onValueChange={setAllocation}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="free-spend" id="free-spend" />
-                <Label htmlFor="free-spend" className="text-sm">Free to spend</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="savings" id="savings" />
-                <Label htmlFor="savings" className="text-sm">Savings goals</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="mixed" id="mixed" />
-                <Label htmlFor="mixed" className="text-sm">Split between both</Label>
-              </div>
-            </RadioGroup>
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              💡 This is a one-time income. For regular salary, use "Set Salary" in your settings.
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">

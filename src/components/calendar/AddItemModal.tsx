@@ -25,12 +25,8 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
   const [type, setType] = useState<'income' | 'expense' | 'savings'>('expense');
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-  const [amount2, setAmount2] = useState(''); // For bi-weekly second paycheck
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [frequency, setFrequency] = useState<'weekly' | 'monthly' | 'yearly' | 'biweekly'>('monthly');
-  const [interval, setInterval] = useState(1);
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -38,12 +34,8 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
     setType('expense');
     setTitle('');
     setAmount('');
-    setAmount2('');
     setCategory('');
     setDescription('');
-    setIsRecurring(false);
-    setFrequency('monthly');
-    setInterval(1);
     setCustomDate(undefined);
     setShowDatePicker(false);
   };
@@ -64,47 +56,16 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
     const targetDate = customDate || selectedDate;
     if (!targetDate) return;
 
-    // Handle bi-weekly with two amounts
-    if (frequency === 'biweekly' && isRecurring && amount2) {
-      // Create two transactions for bi-weekly payments
-      const item1: Omit<CalendarItem, 'id'> = {
-        type,
-        title: `${title} (1st)`,
-        amount: parseFloat(amount),
-        date: formatDateForStorage(targetDate),
-        category: category || undefined,
-        description: description || undefined,
-        recurring: { frequency: 'biweekly', interval },
-      };
-      
-      const secondDate = new Date(targetDate);
-      secondDate.setDate(secondDate.getDate() + 14);
-      
-      const item2: Omit<CalendarItem, 'id'> = {
-        type,
-        title: `${title} (2nd)`,
-        amount: parseFloat(amount2),
-        date: formatDateForStorage(secondDate),
-        category: category || undefined,
-        description: description || undefined,
-        recurring: { frequency: 'biweekly', interval },
-      };
-      
-      onAddItem(item1);
-      onAddItem(item2);
-    } else {
-      const item: Omit<CalendarItem, 'id'> = {
-        type,
-        title,
-        amount: parseFloat(amount),
-        date: formatDateForStorage(targetDate),
-        category: category || undefined,
-        description: description || undefined,
-        recurring: isRecurring ? { frequency, interval } : undefined,
-      };
+    const item: Omit<CalendarItem, 'id'> = {
+      type,
+      title,
+      amount: parseFloat(amount),
+      date: formatDateForStorage(targetDate),
+      category: category || undefined,
+      description: description || undefined,
+    };
 
-      onAddItem(item);
-    }
+    onAddItem(item);
     
     resetForm();
     onOpenChange(false);
@@ -205,7 +166,7 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
 
           {/* Amount */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount{frequency === 'biweekly' && isRecurring ? ' (1st Payment)' : ''}</Label>
+            <Label htmlFor="amount">Amount</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
               <Input
@@ -222,29 +183,6 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
             </div>
           </div>
 
-          {/* Second Amount for Bi-weekly */}
-          {frequency === 'biweekly' && isRecurring && (
-            <div className="space-y-2">
-              <Label htmlFor="amount2">Amount (2nd Payment)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                <Input
-                  id="amount2"
-                  type="number"
-                  value={amount2}
-                  onChange={(e) => setAmount2(e.target.value)}
-                  placeholder="0.00"
-                  className="pl-8"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Leave empty if both payments are the same amount
-              </p>
-            </div>
-          )}
-
           {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Category (optional)</Label>
@@ -256,46 +194,11 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
             />
           </div>
 
-          {/* Recurring */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Recurring</Label>
-              <p className="text-xs text-muted-foreground">
-                Repeat this item automatically
-              </p>
-            </div>
-            <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              💡 This adds a one-time transaction. For recurring income, use "Set Salary" in your settings.
+            </p>
           </div>
-
-          {/* Recurring Options */}
-          {isRecurring && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Frequency</Label>
-                <Select value={frequency} onValueChange={(value: any) => setFrequency(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Every</Label>
-                <Input
-                  type="number"
-                  value={interval}
-                  onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
-                  min="1"
-                  max="12"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Description */}
           <div className="space-y-2">

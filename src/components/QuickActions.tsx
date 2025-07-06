@@ -1,18 +1,19 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Plus, TrendingUp, Calendar, Target, PiggyBank } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, Target, PiggyBank, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface QuickActionsProps {
   onAddIncome: () => void;
   onAddExpense: () => void;
   onAddSavings: () => void;
+  onSetSalary: () => void;
   onViewCalendar: () => void;
   onViewGoals: () => void;
 }
 
-const QuickActions = ({ onAddIncome, onAddExpense, onAddSavings, onViewCalendar, onViewGoals }: QuickActionsProps) => {
+const QuickActions = ({ onAddIncome, onAddExpense, onAddSavings, onSetSalary, onViewCalendar, onViewGoals }: QuickActionsProps) => {
   const navigate = useNavigate();
 
   const handleCalendarClick = () => {
@@ -24,7 +25,7 @@ const QuickActions = ({ onAddIncome, onAddExpense, onAddSavings, onViewCalendar,
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
       <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={onAddIncome}>
         <div className="flex flex-col items-center text-center gap-3">
           <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -57,6 +58,18 @@ const QuickActions = ({ onAddIncome, onAddExpense, onAddSavings, onViewCalendar,
           <div>
             <h3 className="font-semibold text-sm">Add Savings</h3>
             <p className="text-xs text-muted-foreground">Extra contribution</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-4 hover-lift cursor-pointer bg-card" onClick={onSetSalary}>
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="w-12 h-12 bg-orange-600/10 rounded-xl flex items-center justify-center">
+            <Settings className="w-6 h-6 text-orange-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm">Set Salary</h3>
+            <p className="text-xs text-muted-foreground">Configure income</p>
           </div>
         </div>
       </Card>

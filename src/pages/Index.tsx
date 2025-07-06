@@ -11,12 +11,14 @@ import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
 import { useToast } from '@/hooks/use-toast';
 import { useFinancial } from '@/contexts/FinancialContext';
 import AddSavingsDialog from '@/components/AddSavingsDialog';
+import SetSalaryModal from '@/components/SetSalaryModal';
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [showSavingsDialog, setShowSavingsDialog] = useState(false);
+  const [showSalaryModal, setShowSalaryModal] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -31,7 +33,9 @@ const Index = () => {
     generateRecurringTransactions,
     isFirstTimeUser,
     completeOnboarding,
-    addSavingsContribution
+    addSavingsContribution,
+    setSalary,
+    getSalary
   } = useFinancial();
 
   // Generate upcoming events from recurring transactions
@@ -71,12 +75,7 @@ const Index = () => {
       type: 'income',
       amount: income.amount,
       description: income.description,
-      date: income.date,
-      recurring: income.frequency !== 'one-time' ? {
-        type: income.frequency === 'biweekly' ? 'biweekly' : 
-              income.frequency === 'weekly' ? 'weekly' : 'monthly',
-        interval: 1
-      } : undefined
+      date: income.date
     });
     
     toast({
@@ -129,6 +128,14 @@ const Index = () => {
     });
   };
 
+  const handleSetSalary = (salary: any) => {
+    setSalary(salary);
+    toast({
+      title: "Salary Configuration Updated!",
+      description: "Your salary schedule has been saved",
+    });
+  };
+
   useEffect(() => {
     document.body.classList.add('animate-fade-in');
   }, []);
@@ -164,6 +171,7 @@ const Index = () => {
             onAddIncome={() => setShowIncomeDialog(true)}
             onAddExpense={() => setShowExpenseDialog(true)}
             onAddSavings={() => setShowSavingsDialog(true)}
+            onSetSalary={() => setShowSalaryModal(true)}
             onViewCalendar={() => toast({ title: "Calendar", description: "Click the Calendar link in the header" })}
             onViewGoals={() => toast({ title: "Goals", description: "Click the Goals link in the header" })}
           />
@@ -216,6 +224,13 @@ const Index = () => {
         open={showSavingsDialog}
         onOpenChange={setShowSavingsDialog}
         onAddSavings={handleAddSavings}
+      />
+
+      <SetSalaryModal
+        open={showSalaryModal}
+        onOpenChange={setShowSalaryModal}
+        onSetSalary={handleSetSalary}
+        currentSalary={getSalary()}
       />
 
       {/* Onboarding Flow */}

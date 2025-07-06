@@ -65,6 +65,8 @@ interface FinancialContextType {
   isFirstTimeUser: boolean;
   completeOnboarding: () => void;
   addSavingsContribution: (goalId: string, amount: number, description: string, isExtra?: boolean) => void;
+  setSalary: (salary: any) => void;
+  getSalary: () => any;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -134,6 +136,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const [currency, setCurrency] = useState<string>('USD');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [recurringCache, setRecurringCache] = useState<Map<string, Transaction[]>>(new Map());
+  const [salaryConfig, setSalaryConfig] = useState<any>(null);
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction: Transaction = {
@@ -541,6 +544,8 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       isFirstTimeUser,
       completeOnboarding,
       addSavingsContribution,
+      setSalary: setSalaryConfig,
+      getSalary: () => salaryConfig,
     }}>
       {children}
     </FinancialContext.Provider>
