@@ -131,6 +131,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
   };
 
   useEffect(() => {
+    // Update quarterlyAmounts
     switch (frequency) {
       case 'biweekly':
         setQuarterlyAmounts([
@@ -144,7 +145,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
           { quarter: 'Paycheck', amount: '' }
         ]);
         break;
-      default: // weekly or fallback to quarterly setup
+      default: // weekly or fallback
         setQuarterlyAmounts([
           { quarter: 'Q1', amount: '' },
           { quarter: 'Q2', amount: '' },
@@ -153,14 +154,31 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
         ]);
         break;
     }
+
+    // Dynamically update payDays input count
+    switch (frequency) {
+      case 'biweekly':
+        setPayDays(['15', '30']); // or keep existing if preferred
+        break;
+      case 'weekly':
+        setPayDays(['7', '14', '21', '28']); // Default to mid-month, you can choose
+        break;
+      case 'monthly':
+      case 'yearly':
+        setPayDays(['15']); // Default to mid-month, you can choose
+        break;
+      default:
+        setPayDays(['15']); // Fallback
+    }
   }, [frequency]);
+
 
   return (
     <Dialog open={open} onOpenChange={(open) => {
       if (!open) resetForm();
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg w-full px-4 py-6 sm:px-6 sm:py-8">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -191,7 +209,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label>📅 Which days of the month are you paid?</Label>
-              {payDays.length < 3 && (
+              {frequency === 'biweekly' && payDays.length < 2 && (
                 <Button
                   type="button"
                   variant="outline"
