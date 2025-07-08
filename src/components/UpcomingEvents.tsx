@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,38 +19,38 @@ interface UpcomingEventsProps {
 }
 
 const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
-  const { transactions, goals, generateRecurringTransactions } = useFinancial();
+  const { transactions, goals, generateSalaryTransactions } = useFinancial();
 
   // Generate comprehensive upcoming events for next 2 months
   const upcomingEvents = React.useMemo(() => {
     const today = new Date();
     const twoMonthsAhead = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
     
-    // Get ONLY recurring transactions (avoid duplication with base transactions)
-    const recurringTransactions = generateRecurringTransactions(today, twoMonthsAhead);
+    // Get upcoming salary transactions
+    const salaryTransactions = generateSalaryTransactions(today, twoMonthsAhead);
     
-    console.log(`Upcoming events: ${recurringTransactions.length} recurring transactions generated`);
+    console.log(`Upcoming events: ${salaryTransactions.length} salary transactions generated`);
     
-    // Convert to events format - ONLY use generated recurring transactions
-    const transactionEvents: Event[] = recurringTransactions
+    // Convert salary transactions to events format
+    const salaryEvents: Event[] = salaryTransactions
       .filter(t => {
         const eventDate = new Date(t.date);
         return eventDate >= today && eventDate <= twoMonthsAhead;
       })
       .map(t => ({
         id: t.id,
-        type: t.type === 'borrow' ? 'borrow' : t.type,
+        type: 'income',
         title: t.description,
         amount: t.amount,
         date: t.date,
         recurring: true
       }));
 
-    // Add any non-recurring future transactions
+    // Add any future one-time transactions
     const futureOneTimeEvents: Event[] = transactions
       .filter(t => {
         const eventDate = new Date(t.date);
-        return !t.recurring && eventDate >= today && eventDate <= twoMonthsAhead;
+        return eventDate >= today && eventDate <= twoMonthsAhead;
       })
       .map(t => ({
         id: t.id,
@@ -97,13 +96,13 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
     });
 
     // Combine and sort all events by date
-    const allEvents = [...transactionEvents, ...futureOneTimeEvents, ...savingsEvents]
+    const allEvents = [...salaryEvents, ...futureOneTimeEvents, ...savingsEvents]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 20); // Limit to first 20 events
 
     console.log(`Total upcoming events: ${allEvents.length}`);
     return allEvents;
-  }, [transactions, goals, generateRecurringTransactions]);
+  }, [transactions, goals, generateSalaryTransactions]);
 
   const getEventIcon = (type: string) => {
     switch (type) {
