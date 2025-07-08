@@ -19,7 +19,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
   const { getPendingExpenses, transactions, currency, convertCurrency } = useFinancial();
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [displayCurrency, setDisplayCurrency] = useState(currency);
-  
+
   const pendingExpenses = getPendingExpenses();
   const totalBorrowed = transactions
     .filter(t => t.type === 'borrow')
@@ -30,7 +30,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
   const currencies = ['USD', 'EUR', 'CRC', 'GBP', 'CAD'];
   const symbols = { USD: '$', EUR: '€', CRC: '₡', GBP: '£', CAD: 'C$' };
 
-  const convertAmount = (value: number) => 
+  const convertAmount = (value: number) =>
     displayCurrency === currency ? value : convertCurrency(value, displayCurrency);
 
   const formatCurrency = (value: number) => {
@@ -44,8 +44,27 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
       <Card className="p-8 income-gradient text-white shadow-lg hover-lift">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            {/* Currency selector (responsive) */}
+            <div className="flex justify-between items-start mb-2">
               <h2 className="text-lg font-medium text-white/90">Free to Spend Today</h2>
+              <div className="sm:block hidden">
+                <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
+                  <SelectTrigger className="w-20 h-8 bg-white/10 text-white border-white/20 text-xs ml-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map((curr) => (
+                      <SelectItem key={curr} value={curr}>
+                        {curr}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Desktop currency selector - inline next to amount title */}
+            <div className="flex sm:hidden items-center gap-3 mb-2">
               <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
                 <SelectTrigger className="w-20 h-8 bg-white/10 text-white border-white/20 text-xs">
                   <SelectValue />
@@ -87,7 +106,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
             <span>Assigned Savings</span>
             <span className="font-medium">-{formatCurrency(assignedSavings)}</span>
           </div>
-          
+
           {pendingExpenses > 0 && (
             <div className="flex justify-between text-orange-200">
               <span className="flex items-center gap-1">
@@ -104,7 +123,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
               <span className="font-medium">+{formatCurrency(totalBorrowed)}</span>
             </div>
           )}
-          
+
           <div className="border-t border-white/20 pt-3 flex justify-between font-semibold text-white">
             <span>Available to Spend</span>
             <span>{formatCurrency(amount)}</span>
@@ -112,8 +131,8 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         </div>
 
         <div className="mt-6">
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30"
             onClick={() => setShowBorrowModal(true)}
           >
@@ -123,7 +142,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         </div>
       </Card>
 
-      <EmergencyBorrowModal 
+      <EmergencyBorrowModal
         open={showBorrowModal}
         onOpenChange={setShowBorrowModal}
       />
