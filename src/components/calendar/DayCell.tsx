@@ -12,7 +12,10 @@ interface DayCellProps {
 }
 
 const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
-  const { date, items, netFlow, isToday, isPast } = dayData;
+  const adjustedDate = new Date(dayData.date);
+  adjustedDate.setDate(adjustedDate.getDate() + 1);
+  const { items, netFlow, isToday, isPast } = dayData;
+
   const [isHovered, setIsHovered] = useState(false);
 
   const incomeItems = items.filter(item => item.type === 'income');
@@ -46,34 +49,34 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
         'text-xs sm:text-sm font-medium mb-1 sm:mb-2',
         isToday ? 'text-primary font-bold' : 'text-foreground'
       )}>
-        {date.getDate()}
+        {adjustedDate.getDate()}
       </div>
 
       {/* Mobile-friendly indicators - dots for different types */}
       <div className="flex items-center gap-1 mb-1">
         {incomeItems.length > 0 && (
-          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-primary flex-shrink-0" 
-               title={`${incomeItems.length} income item(s)`} />
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-primary flex-shrink-0"
+            title={`${incomeItems.length} income item(s)`} />
         )}
         {expenseItems.length > 0 && (
           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-destructive flex-shrink-0"
-               title={`${expenseItems.length} expense item(s)`} />
+            title={`${expenseItems.length} expense item(s)`} />
         )}
         {savingsItems.length > 0 && (
           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-blue-600 flex-shrink-0"
-               title={`${savingsItems.length} savings item(s)`} />
+            title={`${savingsItems.length} savings item(s)`} />
         )}
         {borrowItems.length > 0 && (
           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-orange-500 flex-shrink-0"
-               title={`${borrowItems.length} borrow item(s)`} />
+            title={`${borrowItems.length} borrow item(s)`} />
         )}
       </div>
 
       {/* Net flow indicator - smaller on mobile */}
       {netFlow !== 0 && (
         <div className={cn('text-xs font-medium truncate', getNetFlowColor())}>
-          {netFlow > 0 ? '+' : ''}${Math.abs(netFlow) >= 1000 ? 
-            `${(Math.abs(netFlow) / 1000).toFixed(1)}k` : 
+          {netFlow > 0 ? '+' : ''}${Math.abs(netFlow) >= 1000 ?
+            `${(Math.abs(netFlow) / 1000).toFixed(1)}k` :
             Math.abs(netFlow).toLocaleString()}
         </div>
       )}
@@ -99,27 +102,27 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
       <HoverCardContent className="w-64 p-3">
         <div className="space-y-2">
           <div className="font-medium text-sm">
-            {date.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'short', 
-              day: 'numeric' 
+            {adjustedDate.toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric'
             })}
           </div>
-          
+
           {items.map(item => (
             <div key={item.id} className="flex justify-between items-center text-xs">
               <span className="truncate">{item.title}</span>
               <span className={cn(
                 'font-medium',
-                item.type === 'income' ? 'text-primary' : 
-                item.type === 'savings' ? 'text-blue-600' : 
-                item.type === 'borrow' ? 'text-orange-500' : 'text-destructive'
+                item.type === 'income' ? 'text-primary' :
+                  item.type === 'savings' ? 'text-blue-600' :
+                    item.type === 'borrow' ? 'text-orange-500' : 'text-destructive'
               )}>
                 {item.type === 'income' ? '+' : '-'}${item.amount.toLocaleString()}
               </span>
             </div>
           ))}
-          
+
           {netFlow !== 0 && (
             <div className="border-t pt-2 flex justify-between items-center text-xs font-medium">
               <span>Net Flow:</span>
