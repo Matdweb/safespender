@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import FreeToSpendCard from '@/components/FreeToSpendCard';
@@ -30,7 +31,8 @@ const Index = () => {
     getTotalExpenses,
     getReservedExpenses,
     getFreeToSpend,
-    generateRecurringTransactions,
+    generateSalaryTransactions,
+    getNextIncomeDate,
     isFirstTimeUser,
     completeOnboarding,
     addSavingsContribution,
@@ -38,14 +40,15 @@ const Index = () => {
     getSalary
   } = useFinancial();
 
-  // Generate upcoming events from recurring transactions
+  // Generate upcoming events from salary and goals
   const upcomingEvents = React.useMemo(() => {
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-    const recurringTransactions = generateRecurringTransactions(now, nextMonth);
+    const salaryTransactions = generateSalaryTransactions(now, nextMonth);
     
     return [
-      ...recurringTransactions.slice(0, 5).map(t => ({
+      // Add salary transactions as upcoming events
+      ...salaryTransactions.slice(0, 3).map(t => ({
         id: t.id,
         type: t.type as 'income' | 'expense',
         title: t.description,
@@ -54,7 +57,7 @@ const Index = () => {
         recurring: true
       })),
       // Add savings goals as upcoming events
-      ...goals.filter(g => g.recurringContribution > 0).map(goal => ({
+      ...goals.filter(g => g.recurringContribution > 0).slice(0, 2).map(goal => ({
         id: `goal-${goal.id}`,
         type: 'savings' as const,
         title: `${goal.icon} ${goal.name} Contribution`,
@@ -63,7 +66,7 @@ const Index = () => {
         recurring: true
       }))
     ];
-  }, [transactions, goals, generateRecurringTransactions]);
+  }, [transactions, goals, generateSalaryTransactions]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -92,10 +95,6 @@ const Index = () => {
       date: expense.date,
       category: expense.category,
       isReserved: expense.isReserved,
-      recurring: expense.isRecurring ? {
-        type: 'monthly',
-        interval: 1
-      } : undefined
     });
     
     toast({
@@ -200,8 +199,8 @@ const Index = () => {
           <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 text-center">
             <h3 className="font-semibold text-primary mb-2">💡 Smart Tip</h3>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Reserve money for upcoming bills to keep your "Free to Spend" amount accurate. 
-              This helps prevent overspending and builds better financial habits.
+              Your "Free to Spend" amount automatically accounts for your programmed salary, upcoming bills, and savings goals. 
+              Set up your salary configuration to get the most accurate calculations.
             </p>
           </div>
         </div>

@@ -21,11 +21,11 @@ const Calendar = () => {
     goals,
     addTransaction, 
     deleteTransaction, 
-    generateRecurringTransactions,
+    generateSalaryTransactions,
     addSavingsContribution
   } = useFinancial();
 
-  // Convert transactions to calendar items - AVOID DUPLICATION
+  // Convert transactions to calendar items
   const calendarItems: CalendarItem[] = React.useMemo(() => {
     console.log('Recalculating calendar items...');
     
@@ -35,17 +35,15 @@ const Calendar = () => {
     
     console.log(`Calendar range: ${startOfRange.toDateString()} to ${endOfRange.toDateString()}`);
     
-    // Get ONLY non-recurring base transactions that fall within our view range
-    const baseTransactionsInRange = transactions
+    // Get manual transactions that fall within our view range
+    const manualTransactionsInRange = transactions
       .filter(t => {
         const transactionDate = new Date(t.date);
-        return transactionDate >= startOfRange && 
-               transactionDate <= endOfRange && 
-               !t.recurring; // Only non-recurring base transactions
+        return transactionDate >= startOfRange && transactionDate <= endOfRange;
       })
       .map(t => ({
         id: t.id,
-        type: t.type, // Keep original type including savings
+        type: t.type,
         title: t.description,
         amount: t.amount,
         date: t.date,
@@ -53,13 +51,13 @@ const Calendar = () => {
         description: t.description,
       }));
 
-    // Generate recurring transactions for the view range
-    const recurringTransactions = generateRecurringTransactions(startOfRange, endOfRange);
+    // Generate salary transactions for the view range
+    const salaryTransactions = generateSalaryTransactions(startOfRange, endOfRange);
     
-    console.log(`Base transactions in range: ${baseTransactionsInRange.length}`);
-    console.log(`Generated recurring transactions: ${recurringTransactions.length}`);
+    console.log(`Manual transactions in range: ${manualTransactionsInRange.length}`);
+    console.log(`Generated salary transactions: ${salaryTransactions.length}`);
     
-    const recurringItems = recurringTransactions.map(t => ({
+    const salaryItems = salaryTransactions.map(t => ({
       id: t.id,
       type: t.type,
       title: t.description,
@@ -67,10 +65,6 @@ const Calendar = () => {
       date: t.date,
       category: t.category,
       description: t.description,
-      recurring: {
-        frequency: t.recurring?.type === 'biweekly' ? 'monthly' as const : t.recurring?.type || 'monthly' as const,
-        interval: t.recurring?.interval || 1
-      }
     }));
 
     // Add savings contributions as calendar items
@@ -98,7 +92,7 @@ const Calendar = () => {
           if (contributionDate >= startOfRange && contributionDate <= endOfRange) {
             savingsItems.push({
               id: `savings-${goal.id}-${contributionDate.getTime()}`,
-              type: 'savings' as const,
+              type: 'savings',
               title: `💰 ${goal.name} Savings`,
               amount: goal.recurringContribution,
               date: `${contributionDate.getFullYear()}-${String(contributionDate.getMonth() + 1).padStart(2, '0')}-${String(contributionDate.getDate()).padStart(2, '0')}`,
@@ -110,11 +104,11 @@ const Calendar = () => {
       }
     });
 
-    const allItems = [...baseTransactionsInRange, ...recurringItems, ...savingsItems];
+    const allItems = [...manualTransactionsInRange, ...salaryItems, ...savingsItems];
     console.log(`Total calendar items: ${allItems.length}`);
     
     return allItems;
-  }, [transactions, goals, currentDate, generateRecurringTransactions]);
+  }, [transactions, goals, currentDate, generateSalaryTransactions]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -142,13 +136,6 @@ const Calendar = () => {
       description: item.title,
       date: item.date,
       category: item.category,
-      recurring: item.recurring ? {
-        type: item.recurring.frequency === 'weekly' ? 'weekly' : 
-              item.recurring.frequency === 'yearly' ? 'monthly' :
-              item.recurring.frequency === 'biweekly' ? 'biweekly' :
-              item.recurring.frequency,
-        interval: item.recurring.interval
-      } : undefined
     });
   };
 

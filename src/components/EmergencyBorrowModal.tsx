@@ -18,21 +18,50 @@ interface EmergencyBorrowModalProps {
 const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps) => {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
-  const { getNextIncomeAmount, addTransaction } = useFinancial();
+  const { 
+    getNextIncomeAmount, 
+    getNextIncomeDate, 
+    borrowFromNextIncome, 
+    getPendingExpenses,
+    goals
+  } = useFinancial();
   const { toast } = useToast();
 
-  const maxBorrowAmount = Math.floor(getNextIncomeAmount() * 0.5); // Max 50% of next income
+  const nextIncomeDate = getNextIncomeDate();
+  const nextIncomeAmount = getNextIncomeAmount();
+  const pendingExpenses = getPendingExpenses();
+  
+  // Calculate upcoming savings until next income
+  const upcomingSavings = goals
+    .filter(goal => goal.recurringContribution > 0)
+    .reduce((sum, goal) => {
+      if (!nextIncomeDate) return sum;
+      const today = new Date();
+      const daysBetween = Math.ceil((nextIncomeDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let contributions = 0;
+      switch (goal.contributionFrequency) {
+        case 'weekly':
+          contributions = Math.floor(daysBetween / 7);
+          break;
+        case 'biweekly':
+          contributions = Math.floor(daysBetween / 14);
+          break;
+        case 'monthly':
+          contributions = Math.floor(daysBetween / 30);
+          break;
+      }
+      
+      return sum + (contributions * goal.recurringContribution);
+    }, 0);
+
+  const availableAfterObligations = Math.max(0, nextIncomeAmount - pendingExpenses - upcomingSavings);
+  const maxBorrowAmount = Math.floor(availableAfterObligations * 0.8); // Max 80% of available amount
   const isValidAmount = amount && parseFloat(amount) > 0 && parseFloat(amount) <= maxBorrowAmount;
 
   const handleBorrow = () => {
     if (isValidAmount) {
-      addTransaction({
-        type: 'borrow',
-        amount: parseFloat(amount),
-        description: reason || 'Emergency advance',
-        date: new Date().toISOString().split('T')[0],
-        category: 'advance'
-      });
+      borrowFromNextIncome(parseFloat(amount), reason || 'Emergency advance');
       
       toast({
         title: "Advance Approved! 💰",
@@ -67,8 +96,13 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
         <div className="space-y-4">
           <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
             <p className="text-sm text-orange-800 dark:text-orange-200">
-              Borrow a small amount from your next programmed income. This will reduce your next paycheck accordingly.
+              Borrow a small amount from your next programmed salary. This will reduce your next paycheck accordingly.
             </p>
+            {nextIncomeDate && (
+              <p className="text-xs text-orange-600 dark:text-orange-300 mt-2">
+                Next salary: {nextIncomeDate.toLocaleDateString()}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -86,7 +120,7 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Maximum: <CurrencyDisplay amount={maxBorrowAmount} className="inline" /> (50% of next income)
+              Maximum: <CurrencyDisplay amount={maxBorrowAmount} className="inline" /> (available after obligations)
             </p>
           </div>
 
@@ -106,17 +140,31 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
             </Select>
           </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg">
+          <div className="bg-muted/50 p-3 rounded-lg space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Next Income:</span>
-              <span className="font-medium"><CurrencyDisplay amount={getNextIncomeAmount()} className="inline" /></span>
+              <span>Next Salary:</span>
+              <span className="font-medium"><CurrencyDisplay amount={nextIncomeAmount} className="inline" /></span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>After Borrowing:</span>
-              <span className="font-medium">
-                <CurrencyDisplay amount={getNextIncomeAmount() - (parseFloat(amount) || 0)} className="inline" />
-              </span>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>- Upcoming Bills:</span>
+              <span><CurrencyDisplay amount={pendingExpenses} className="inline" /></span>
             </div>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>- Upcoming Savings:</span>
+              <span><CurrencyDisplay amount={upcomingSavings} className="inline" /></span>
+            </div>
+            <div className="border-t pt-2 flex justify-between text-sm font-medium">
+              <span>Available to Borrow:</span>
+              <span><CurrencyDisplay amount={availableAfterObligations} className="inline" /></span>
+            </div>
+            {parseFloat(amount) > 0 && (
+              <div className="flex justify-between text-sm">
+                <span>After Borrowing:</span>
+                <span className="font-medium">
+                  <CurrencyDisplay amount={availableAfterObligations - (parseFloat(amount) || 0)} className="inline" />
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3">
