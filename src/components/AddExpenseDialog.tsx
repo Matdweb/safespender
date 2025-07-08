@@ -53,17 +53,15 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
       category,
       description: description || category,
       isRecurring,
-      isReserved
+      isReserved,
+      ...(isRecurring && {
+        recurring: {
+          type: recurringType,
+          interval: 1,
+          dayOfMonth: new Date(date).getDate()
+        }
+      })
     };
-
-    // Add recurring configuration if applicable
-    if (isRecurring) {
-      expenseData.recurring = {
-        type: recurringType,
-        interval: 1,
-        dayOfMonth: new Date(date).getDate()
-      };
-    }
 
     onAddExpense(expenseData);
 
