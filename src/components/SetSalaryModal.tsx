@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Settings, Plus, X } from 'lucide-react';
+import { useFinancial } from '@/contexts/FinancialContext';
 
 interface QuarterlyAmount {
   quarter: string;

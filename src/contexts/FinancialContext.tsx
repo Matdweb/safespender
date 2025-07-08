@@ -254,9 +254,9 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const generateSalaryTransactions = (startDate: Date, endDate: Date): Transaction[] => {
-    if (!salaryConfig || !this.startDate) return [];
+    if (!salaryConfig || !startDate) return [];
 
-    const appStartDate = new Date(this.startDate);
+    const appStartDate = new Date(startDate);
     // Only generate transactions from app start date onward
     const effectiveStartDate = startDate < appStartDate ? appStartDate : startDate;
 
