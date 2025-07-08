@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFinancial } from '@/contexts/FinancialContext';
 import AddSavingsDialog from '@/components/AddSavingsDialog';
 import SetSalaryModal from '@/components/SetSalaryModal';
+import { testSalaryCalculations } from '@/utils/salaryTestUtils';
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -39,6 +40,15 @@ const Index = () => {
     setSalary,
     getSalary
   } = useFinancial();
+
+  // Test salary calculations when salary config changes
+  useEffect(() => {
+    const currentSalary = getSalary();
+    if (currentSalary) {
+      console.log('🔍 Testing current salary configuration...');
+      testSalaryCalculations(currentSalary);
+    }
+  }, [getSalary]);
 
   // Generate upcoming events from salary and goals
   const upcomingEvents = React.useMemo(() => {
@@ -128,10 +138,17 @@ const Index = () => {
   };
 
   const handleSetSalary = (salary: any) => {
+    console.log('🎯 Setting new salary configuration:', salary);
     setSalary(salary);
+    
+    // Test the new configuration
+    setTimeout(() => {
+      testSalaryCalculations(salary);
+    }, 100);
+    
     toast({
       title: "Salary Configuration Updated!",
-      description: "Your salary schedule has been saved",
+      description: "Your salary schedule has been saved and tested",
     });
   };
 

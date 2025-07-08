@@ -89,17 +89,26 @@ const getCurrentQuarter = (date: Date): string => {
   return 'Q4';
 };
 
-const getQuarterForBiweekly = (date: Date, isFirstPaycheck: boolean): string => {
+const getBiweeklyPaycheckType = (date: Date, salaryConfig: SalaryConfig): string => {
+  // For biweekly, we need to determine if this is first or second paycheck
+  // We'll use the day of month to determine this
+  const dayOfMonth = date.getDate();
+  const sortedDays = [...salaryConfig.daysOfMonth].sort((a, b) => a - b);
+  
+  // Find which payday this is
+  const payDayIndex = sortedDays.findIndex(day => Math.abs(day - dayOfMonth) <= 1);
+  
+  // Alternate between paychecks based on month and payday
+  const monthsSinceStart = date.getMonth();
+  const isFirstPaycheck = (monthsSinceStart + payDayIndex) % 2 === 0;
+  
   return isFirstPaycheck ? 'First Paycheck' : 'Second Paycheck';
 };
 
 const getSalaryAmountForDate = (date: Date, salary: SalaryConfig): number => {
   if (salary.frequency === 'biweekly') {
-    // For biweekly, alternate between first and second paycheck
-    const weekOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-    const isFirstPaycheck = weekOfYear % 4 < 2;
-    const quarterKey = getQuarterForBiweekly(date, isFirstPaycheck);
-    const quarterAmount = salary.quarterlyAmounts.find(q => q.quarter === quarterKey);
+    const paycheckType = getBiweeklyPaycheckType(date, salary);
+    const quarterAmount = salary.quarterlyAmounts.find(q => q.quarter === paycheckType);
     return quarterAmount?.amount || 0;
   } else if (salary.frequency === 'monthly' || salary.frequency === 'yearly') {
     const quarterAmount = salary.quarterlyAmounts.find(q => q.quarter === 'Paycheck');
@@ -118,7 +127,6 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const [currency, setCurrency] = useState<string>('USD');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [salaryConfig, setSalaryConfig] = useState<SalaryConfig | null>(null);
-  const [borrowedFromNextIncome, setBorrowedFromNextIncome] = useState<number>(0);
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction: Transaction = {
@@ -227,7 +235,13 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     if (!nextDate) return 0;
 
     const salaryAmount = getSalaryAmountForDate(nextDate, salaryConfig);
-    return Math.max(0, salaryAmount - borrowedFromNextIncome);
+    
+    // Subtract any borrowed amounts from next income
+    const borrowedFromNext = transactions
+      .filter(t => t.type === 'borrow' && t.borrowedFromIncomeId === 'next')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    return Math.max(0, salaryAmount - borrowedFromNext);
   };
 
   const generateSalaryTransactions = (startDate: Date, endDate: Date): Transaction[] => {
@@ -254,11 +268,15 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
           if (salaryDate >= startDate && salaryDate <= endDate) {
             const salaryAmount = getSalaryAmountForDate(salaryDate, salaryConfig);
             
-            // Subtract borrowed amount only from the next income
+            // Only subtract borrowed amount if this is the next income
             const nextIncomeDate = getNextIncomeDate();
             let adjustedAmount = salaryAmount;
+            
             if (nextIncomeDate && salaryDate.getTime() === nextIncomeDate.getTime()) {
-              adjustedAmount = Math.max(0, salaryAmount - borrowedFromNextIncome);
+              const borrowedFromNext = transactions
+                .filter(t => t.type === 'borrow' && t.borrowedFromIncomeId === 'next')
+                .reduce((sum, t) => sum + t.amount, 0);
+              adjustedAmount = Math.max(0, salaryAmount - borrowedFromNext);
             }
 
             const generatedId = `salary-${year}-${month}-${validDay}`;
@@ -283,15 +301,17 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     const today = new Date();
     const startOfYear = new Date(today.getFullYear(), 0, 1);
     
-    // Get manual income transactions
+    // Get manual income transactions up to today
     const manualIncome = transactions
       .filter(t => t.type === 'income' && new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Get salary income up to today
+    // Get salary income up to today only
     const salaryIncome = generateSalaryTransactions(startOfYear, today)
+      .filter(t => new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
 
+    console.log(`Total income calculation: Manual: ${manualIncome}, Salary: ${salaryIncome}, Total: ${manualIncome + salaryIncome}`);
     return manualIncome + salaryIncome;
   };
 
@@ -326,15 +346,15 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     const today = new Date();
     const nextIncomeDate = getNextIncomeDate();
 
-    // Total received salary income up to today
-    const totalIncomeToDate = getTotalIncome();
+    // Calculate income received up to today only
+    const totalIncomeReceived = getTotalIncome();
 
-    // Upcoming expenses until next salary
+    // Calculate upcoming expenses until next salary
     let upcomingExpenses = 0;
     let upcomingSavings = 0;
 
     if (nextIncomeDate) {
-      // Expenses scheduled before next income
+      // Expenses scheduled between now and next income
       upcomingExpenses = transactions
         .filter(t => {
           const transactionDate = new Date(t.date);
@@ -344,7 +364,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Savings contributions scheduled before next income
+      // Savings contributions scheduled between now and next income
       upcomingSavings = goals
         .filter(goal => goal.recurringContribution > 0)
         .reduce((goalSum, goal) => {
@@ -363,9 +383,21 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       .filter(t => t.type === 'savings')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const freeAmount = totalIncomeToDate - upcomingExpenses - upcomingSavings + totalBorrowed - totalSavingsContributions;
+    // Subtract total expenses that have been paid
+    const totalExpensesPaid = transactions
+      .filter(t => t.type === 'expense' && new Date(t.date) <= today)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const freeAmount = totalIncomeReceived - totalExpensesPaid - upcomingExpenses - upcomingSavings + totalBorrowed - totalSavingsContributions;
     
-    console.log(`Free to spend: ${totalIncomeToDate} income - ${upcomingExpenses} upcoming expenses - ${upcomingSavings} upcoming savings + ${totalBorrowed} borrowed - ${totalSavingsContributions} savings = ${freeAmount}`);
+    console.log(`Free to spend calculation:
+      Total income received: ${totalIncomeReceived}
+      Total expenses paid: ${totalExpensesPaid}
+      Upcoming expenses: ${upcomingExpenses}
+      Upcoming savings: ${upcomingSavings}
+      Total borrowed: ${totalBorrowed}
+      Total savings contributions: ${totalSavingsContributions}
+      Free amount: ${freeAmount}`);
     
     return Math.max(0, freeAmount);
   };
@@ -394,11 +426,11 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       amount,
       description: reason || 'Emergency advance',
       date: new Date().toISOString().split('T')[0],
-      category: 'advance'
+      category: 'advance',
+      borrowedFromIncomeId: 'next'
     });
 
-    // Track borrowed amount to subtract from next income
-    setBorrowedFromNextIncome(prev => prev + amount);
+    console.log(`Borrowed ${amount} from next income: ${reason}`);
   };
 
   const completeOnboarding = () => {
