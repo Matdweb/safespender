@@ -54,6 +54,7 @@ interface FinancialContextType {
   getNextIncomeAmount: () => number;
   getNextIncomeDate: () => Date | null;
   generateSalaryTransactions: (startDate: Date, endDate: Date) => Transaction[];
+  generateRecurringTransactions: (startDate: Date, endDate: Date) => Transaction[];
   getTotalIncome: () => number;
   getTotalExpenses: () => number;
   getReservedExpenses: () => number;
@@ -546,6 +547,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       getNextIncomeAmount,
       getNextIncomeDate,
       generateSalaryTransactions,
+      generateRecurringTransactions,
       getTotalIncome,
       getTotalExpenses,
       getReservedExpenses,
@@ -558,7 +560,6 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       getSalary: () => salaryConfig,
       borrowFromNextIncome,
       setStartDate,
-      generateRecurringTransactions,
     }}>
       {children}
     </FinancialContext.Provider>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -92,6 +91,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
