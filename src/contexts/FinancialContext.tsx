@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export interface Transaction {
@@ -43,6 +42,7 @@ interface FinancialContextType {
   transactions: Transaction[];
   goals: Goal[];
   currency: string;
+  startDate: string | null;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
@@ -65,6 +65,7 @@ interface FinancialContextType {
   setSalary: (salary: SalaryConfig) => void;
   getSalary: () => SalaryConfig | null;
   borrowFromNextIncome: (amount: number, reason: string) => void;
+  setStartDate: (date: string) => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -127,6 +128,12 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const [currency, setCurrency] = useState<string>('USD');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [salaryConfig, setSalaryConfig] = useState<SalaryConfig | null>(null);
+  const [startDate, setStartDateState] = useState<string | null>(null);
+
+  const setStartDate = (date: string) => {
+    setStartDateState(date);
+    localStorage.setItem('safespender-start-date', date);
+  };
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction: Transaction = {
@@ -206,20 +213,22 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const getNextIncomeDate = (): Date | null => {
-    if (!salaryConfig) return null;
+    if (!salaryConfig || !startDate) return null;
 
     const today = new Date();
+    const appStartDate = new Date(startDate);
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
 
-    // Generate next few months of salary dates
+    // Generate next few months of salary dates starting from app start date
     for (let monthOffset = 0; monthOffset <= 12; monthOffset++) {
       const checkDate = new Date(currentYear, currentMonth + monthOffset, 1);
       
       for (const dayOfMonth of salaryConfig.daysOfMonth) {
         const salaryDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), Math.min(dayOfMonth, new Date(checkDate.getFullYear(), checkDate.getMonth() + 1, 0).getDate()));
         
-        if (salaryDate > today) {
+        // Only consider dates from app start date onward
+        if (salaryDate >= appStartDate && salaryDate > today) {
           return salaryDate;
         }
       }
@@ -229,7 +238,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const getNextIncomeAmount = (): number => {
-    if (!salaryConfig) return 0;
+    if (!salaryConfig || !startDate) return 0;
 
     const nextDate = getNextIncomeDate();
     if (!nextDate) return 0;
@@ -245,13 +254,17 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const generateSalaryTransactions = (startDate: Date, endDate: Date): Transaction[] => {
-    if (!salaryConfig) return [];
+    if (!salaryConfig || !this.startDate) return [];
 
-    console.log(`Generating salary transactions from ${startDate.toDateString()} to ${endDate.toDateString()}`);
+    const appStartDate = new Date(this.startDate);
+    // Only generate transactions from app start date onward
+    const effectiveStartDate = startDate < appStartDate ? appStartDate : startDate;
+
+    console.log(`Generating salary transactions from ${effectiveStartDate.toDateString()} to ${endDate.toDateString()}`);
     
     const generated: Transaction[] = [];
-    const startYear = startDate.getFullYear();
-    const startMonth = startDate.getMonth();
+    const startYear = effectiveStartDate.getFullYear();
+    const startMonth = effectiveStartDate.getMonth();
     const endYear = endDate.getFullYear();
     const endMonth = endDate.getMonth();
 
@@ -265,7 +278,8 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
           const validDay = Math.min(dayOfMonth, daysInMonth);
           const salaryDate = new Date(year, month, validDay);
 
-          if (salaryDate >= startDate && salaryDate <= endDate) {
+          // Only include dates from app start date onward
+          if (salaryDate >= effectiveStartDate && salaryDate >= effectiveStartDate && salaryDate <= endDate) {
             const salaryAmount = getSalaryAmountForDate(salaryDate, salaryConfig);
             
             // Only subtract borrowed amount if this is the next income
@@ -298,20 +312,22 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const getTotalIncome = () => {
+    if (!startDate) return 0;
+
     const today = new Date();
-    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    const appStartDate = new Date(startDate);
     
-    // Get manual income transactions up to today
+    // Get manual income transactions from app start date to today
     const manualIncome = transactions
-      .filter(t => t.type === 'income' && new Date(t.date) <= today)
+      .filter(t => t.type === 'income' && new Date(t.date) >= appStartDate && new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Get salary income up to today only
-    const salaryIncome = generateSalaryTransactions(startOfYear, today)
+    // Get salary income from app start date to today only
+    const salaryIncome = generateSalaryTransactions(appStartDate, today)
       .filter(t => new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    console.log(`Total income calculation: Manual: ${manualIncome}, Salary: ${salaryIncome}, Total: ${manualIncome + salaryIncome}`);
+    console.log(`Total income calculation (from ${appStartDate.toDateString()}): Manual: ${manualIncome}, Salary: ${salaryIncome}, Total: ${manualIncome + salaryIncome}`);
     return manualIncome + salaryIncome;
   };
 
@@ -343,22 +359,26 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const getFreeToSpend = (): number => {
+    if (!startDate) return 0;
+
     const today = new Date();
+    const appStartDate = new Date(startDate);
     const nextIncomeDate = getNextIncomeDate();
 
-    // Calculate income received up to today only
+    // Calculate income received from app start date up to today only
     const totalIncomeReceived = getTotalIncome();
 
-    // Calculate upcoming expenses until next salary
+    // Calculate upcoming expenses and savings until next salary (from app start date onward)
     let upcomingExpenses = 0;
     let upcomingSavings = 0;
 
     if (nextIncomeDate) {
-      // Expenses scheduled between now and next income
+      // Expenses scheduled between now and next income (from app start date onward)
       upcomingExpenses = transactions
         .filter(t => {
           const transactionDate = new Date(t.date);
           return t.type === 'expense' && 
+                 transactionDate >= appStartDate &&
                  transactionDate > today && 
                  transactionDate <= nextIncomeDate;
         })
@@ -373,24 +393,24 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
         }, 0);
     }
 
-    // Include borrowed amounts as positive additions
+    // Include borrowed amounts as positive additions (from app start date onward)
     const totalBorrowed = transactions
-      .filter(t => t.type === 'borrow')
+      .filter(t => t.type === 'borrow' && new Date(t.date) >= appStartDate)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Subtract all savings contributions that have been made
+    // Subtract all savings contributions that have been made (from app start date onward)
     const totalSavingsContributions = transactions
-      .filter(t => t.type === 'savings')
+      .filter(t => t.type === 'savings' && new Date(t.date) >= appStartDate)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Subtract total expenses that have been paid
+    // Subtract total expenses that have been paid (from app start date onward)
     const totalExpensesPaid = transactions
-      .filter(t => t.type === 'expense' && new Date(t.date) <= today)
+      .filter(t => t.type === 'expense' && new Date(t.date) >= appStartDate && new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
 
     const freeAmount = totalIncomeReceived - totalExpensesPaid - upcomingExpenses - upcomingSavings + totalBorrowed - totalSavingsContributions;
     
-    console.log(`Free to spend calculation:
+    console.log(`Free to spend calculation (from ${appStartDate.toDateString()}):
       Total income received: ${totalIncomeReceived}
       Total expenses paid: ${totalExpensesPaid}
       Upcoming expenses: ${upcomingExpenses}
@@ -434,15 +454,27 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   };
 
   const completeOnboarding = () => {
+    // Set start date to today when completing onboarding
+    if (!startDate) {
+      const today = new Date().toISOString().split('T')[0];
+      setStartDate(today);
+    }
+    
     setIsFirstTimeUser(false);
     localStorage.setItem('safespender-onboarded', 'true');
   };
 
-  // Check if user has completed onboarding
+  // Load saved data on mount
   useEffect(() => {
     const hasOnboarded = localStorage.getItem('safespender-onboarded');
+    const savedStartDate = localStorage.getItem('safespender-start-date');
+    
     if (hasOnboarded) {
       setIsFirstTimeUser(false);
+    }
+    
+    if (savedStartDate) {
+      setStartDateState(savedStartDate);
     }
   }, []);
 
@@ -451,6 +483,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       transactions,
       goals,
       currency,
+      startDate,
       addTransaction,
       updateTransaction,
       deleteTransaction,
@@ -473,6 +506,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       setSalary: setSalaryConfig,
       getSalary: () => salaryConfig,
       borrowFromNextIncome,
+      setStartDate,
     }}>
       {children}
     </FinancialContext.Provider>

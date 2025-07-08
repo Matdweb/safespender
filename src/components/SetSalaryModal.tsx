@@ -28,6 +28,7 @@ interface SetSalaryModalProps {
 }
 
 const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetSalaryModalProps) => {
+  const { setStartDate, startDate } = useFinancial();
   const [frequency, setFrequency] = useState(currentSalary?.frequency || 'biweekly');
   const [payDays, setPayDays] = useState<string[]>(
     currentSalary?.daysOfMonth?.map(d => d.toString()) || ['15', '30']
@@ -98,6 +99,12 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
     e.preventDefault();
 
     if (validate()) {
+      // If this is the first time setting salary and no start date exists, set it to today
+      if (!currentSalary && !startDate) {
+        const today = new Date().toISOString().split('T')[0];
+        setStartDate(today);
+      }
+
       onSetSalary({
         frequency,
         daysOfMonth: payDays.map(d => parseInt(d)).filter(d => !isNaN(d)),

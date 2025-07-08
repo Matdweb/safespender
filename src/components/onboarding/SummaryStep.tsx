@@ -1,236 +1,124 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { CheckCircle, Calendar, Target, TrendingUp } from 'lucide-react';
-import { OnboardingData } from './OnboardingFlow';
+import React from 'react';
+import { OnboardingStepProps } from './types';
 import { useFinancial } from '@/contexts/FinancialContext';
+import { OnboardingData } from './OnboardingFlow';
+import { Button } from '@/components/ui/button';
 
-interface SummaryStepProps {
+interface Props {
   data: OnboardingData;
   onNext: () => void;
   onBack?: () => void;
 }
 
-const SummaryStep = ({ data, onNext, onBack }: SummaryStepProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
-  const { 
-    addTransaction, 
-    addGoal, 
-    transactions, 
-    goals,
-    setCurrency
-  } = useFinancial();
+const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
+  const { setCurrency, setSalary, addGoal, addTransaction, setStartDate } = useFinancial();
 
-  const handleFinish = async () => {
-    if (hasInitialized || isSubmitting) return;
+  const handleComplete = () => {
+    console.log('🎯 Completing onboarding with data:', data);
     
-    setIsSubmitting(true);
-    setHasInitialized(true);
+    // Set app start date to today
+    const today = new Date().toISOString().split('T')[0];
+    setStartDate(today);
+    
+    // Set currency
+    if (data.currency) {
+      setCurrency(data.currency);
+    }
 
-    try {
-      // Set currency preference
-      if (data.currency) {
-        setCurrency(data.currency);
-      }
+    // Set salary configuration
+    if (data.salary) {
+      console.log('💰 Setting up salary:', data.salary);
+      setSalary(data.salary);
+    }
 
-      // Add salary configuration
-      if (data.salary) {
-        // Calculate next income dates based on salary configuration
-        const today = new Date();
-        data.salary.daysOfMonth.forEach(dayOfMonth => {
-          // Get current quarter to determine amount
-          const currentQuarter = `Q${Math.ceil((today.getMonth() + 1) / 3)}`;
-          const quarterData = data.salary!.quarterlyAmounts.find(q => q.quarter === currentQuarter);
-          const amount = quarterData?.amount || data.salary!.quarterlyAmounts[0]?.amount || 0;
-          
-          if (amount > 0) {
-            console.log(`Creating salary income: $${amount} on day ${dayOfMonth}`);
-            addTransaction({
-              type: 'income',
-              amount: amount,
-              description: `Salary - ${currentQuarter}`,
-              date: today.toISOString().split('T')[0],
-              recurring: {
-                type: data.salary.frequency === 'weekly' ? 'weekly' : 
-                      data.salary.frequency === 'biweekly' ? 'biweekly' : 'monthly',
-                interval: 1,
-                dayOfMonth: dayOfMonth,
-                daysOfMonth: data.salary.daysOfMonth
-              }
-            });
-          }
-        });
-      }
-
-      // Add expense transactions
-      data.expenses.forEach((expense, index) => {
-        const expenseDate = new Date();
-        if (expense.dayOfMonth) {
-          expenseDate.setDate(expense.dayOfMonth);
-          if (expenseDate < new Date()) {
-            expenseDate.setMonth(expenseDate.getMonth() + 1);
-          }
-        }
-
-        console.log(`Creating expense ${index + 1}:`, expense.description, expense.amount);
+    // Add initial expenses
+    if (data.expenses && data.expenses.length > 0) {
+      console.log('💸 Adding initial expenses:', data.expenses);
+      data.expenses.forEach(expense => {
         addTransaction({
           type: 'expense',
           amount: expense.amount,
           description: expense.description,
-          date: expenseDate.toISOString().split('T')[0],
+          date: today, // Use today as the date for initial expenses
           category: expense.category,
-          isReserved: true,
-          recurring: expense.recurring
+          isReserved: true, // Mark onboarding expenses as reserved
         });
       });
-
-      // Add the goal
-      if (data.goal) {
-        console.log('Creating goal:', data.goal.name, data.goal.targetAmount);
-        addGoal({
-          name: data.goal.name,
-          targetAmount: data.goal.targetAmount,
-          currentAmount: 0,
-          recurringContribution: data.goal.recurringContribution,
-          contributionFrequency: data.goal.contributionFrequency,
-          icon: data.goal.icon
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
     }
+
+    // Add initial savings goal
+    if (data.goal) {
+      console.log('🎯 Adding savings goal:', data.goal);
+      addGoal({
+        name: data.goal.name,
+        targetAmount: data.goal.targetAmount,
+        currentAmount: 0,
+        recurringContribution: data.goal.recurringContribution,
+        contributionFrequency: data.goal.contributionFrequency,
+        icon: data.goal.icon,
+      });
+    }
+
+    // Complete onboarding
+    onNext();
   };
 
-  useEffect(() => {
-    // Prevent duplicate initialization
-    if (hasInitialized) {
-      console.log('SummaryStep: Already initialized, skipping data creation');
-      return;
-    }
-
-    console.log('SummaryStep: Initializing data creation');
-    setHasInitialized(true);
-
-    handleFinish();
-  }, []); // Empty dependency array - only run once
-
-  const totalIncome = data.salary 
-    ? data.salary.quarterlyAmounts.reduce((sum, q) => sum + q.amount, 0) 
-    : 0;
-  const totalExpenses = data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const goalContribution = data.goal ? data.goal.recurringContribution : 0;
-  const freeToSpend = totalIncome - totalExpenses - goalContribution;
-
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <div className="text-6xl">🎉</div>
-        <div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            You're all set!
-          </h2>
-          <p className="text-muted-foreground">
-            Here's your financial foundation. You can always adjust these later.
-          </p>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Summary</h2>
+      <p>Review your information before proceeding.</p>
+
+      {data.currency && (
+        <div className="border rounded-md p-4">
+          <strong>Currency:</strong> {data.currency}
         </div>
-      </div>
+      )}
 
-      <div className="max-w-md mx-auto space-y-4">
-        {/* Free to Spend Summary */}
-        <Card className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-          <div className="flex items-center gap-3 mb-3">
-            <CheckCircle className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Your Free-to-Spend</h3>
-          </div>
-          <div className="text-3xl font-bold text-primary mb-2">
-            ${freeToSpend.toLocaleString()}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Available after bills and savings each period
-          </p>
-        </Card>
-
-        {/* Salary Summary */}
-        {data.salary && (
-          <Card className="p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <h4 className="font-medium">Salary Setup</h4>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">
-                Paid {data.salary.frequency} on day(s): {data.salary.daysOfMonth.join(', ')}
-              </p>
-              {data.salary.quarterlyAmounts.map((q) => (
-                <p key={q.quarter} className="text-sm text-muted-foreground">
-                  {q.quarter}: ${q.amount.toLocaleString()} per paycheck
-                </p>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Expenses Summary */}
-        {data.expenses.length > 0 && (
-          <Card className="p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <Calendar className="w-4 h-4 text-orange-600" />
-              <h4 className="font-medium">Upcoming Bills</h4>
-            </div>
-            <div className="space-y-1">
-              {data.expenses.slice(0, 3).map((expense, index) => (
-                <p key={index} className="text-sm text-muted-foreground">
-                  ${expense.amount.toLocaleString()} • {expense.description}
-                </p>
-              ))}
-              {data.expenses.length > 3 && (
-                <p className="text-sm text-muted-foreground">
-                  ...and {data.expenses.length - 3} more
-                </p>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {/* Goal Summary */}
-        {data.goal && (
-          <Card className="p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <Target className="w-4 h-4 text-primary" />
-              <h4 className="font-medium">Savings Goal</h4>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {data.goal.icon} {data.goal.name} • ${data.goal.targetAmount.toLocaleString()} target
-            </p>
-            {data.goal.recurringContribution > 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Saving ${data.goal.recurringContribution} {data.goal.contributionFrequency}
-              </p>
-            )}
-          </Card>
-        )}
-      </div>
-
-      <div className="text-center space-y-4">
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          🚀 Ready to take control of your finances? Your dashboard is waiting with all your data synced and ready to go!
-        </p>
-        
-        <div className="flex gap-3 justify-center">
-          {onBack && (
-            <Button variant="outline" onClick={onBack}>
-              Back
-            </Button>
-          )}
-          <Button 
-            onClick={onNext}
-            size="lg" 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 hover-lift"
-          >
-            Go to Dashboard 🎯
-          </Button>
+      {data.salary && (
+        <div className="border rounded-md p-4">
+          <strong>Salary Frequency:</strong> {data.salary.frequency}
+          <br />
+          <strong>Pay Days:</strong> {data.salary.daysOfMonth.join(', ')}
+          <br />
+          <strong>Quarterly Amounts:</strong>
+          <ul>
+            {data.salary.quarterlyAmounts.map((q, index) => (
+              <li key={index}>
+                {q.quarter}: {q.amount}
+              </li>
+            ))}
+          </ul>
         </div>
+      )}
+
+      {data.expenses && data.expenses.length > 0 && (
+        <div className="border rounded-md p-4">
+          <strong>Expenses:</strong>
+          <ul>
+            {data.expenses.map((expense, index) => (
+              <li key={index}>
+                {expense.description} - {expense.amount} ({expense.category})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {data.goal && (
+        <div className="border rounded-md p-4">
+          <strong>Goal:</strong> {data.goal.name}
+          <br />
+          <strong>Target Amount:</strong> {data.goal.targetAmount}
+          <br />
+          <strong>Recurring Contribution:</strong> {data.goal.recurringContribution} ({data.goal.contributionFrequency})
+        </div>
+      )}
+
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={onNext}>
+          Complete Onboarding
+        </Button>
+        <Button onClick={handleComplete}>Confirm</Button>
       </div>
     </div>
   );
