@@ -1,17 +1,14 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  initials: string;
-}
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string) => Promise<{ error?: string }>;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -31,36 +28,78 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     
-    // Hardcoded user for demo
-    if (email === 'demo@safespender.com' && password === 'demo123') {
-      const userData: User = {
-        id: '1',
-        email: email,
-        name: email.split('@')[0],
-        initials: email.split('@')[0].substring(0, 2).toUpperCase()
-      };
-      setUser(userData);
-    } else {
-      throw new Error('Invalid credentials');
+    setIsLoading(false);
+    
+    if (error) {
+      return { error: error.message };
     }
     
+    return {};
+  };
+
+  const signUp = async (email: string, password: string) => {
+    setIsLoading(true);
+    
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    });
+    
+    setIsLoading(false);
+    
+    if (error) {
+      return { error: error.message };
+    }
+    
+    return {};
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
     setIsLoading(false);
   };
 
-  const logout = () => {
-    setUser(null);
-  };
-
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, session, login, signUp, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

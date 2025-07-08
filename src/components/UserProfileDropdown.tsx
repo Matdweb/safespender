@@ -18,8 +18,8 @@ const UserProfileDropdown = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Signed out",
       description: "You've been successfully signed out",
@@ -48,7 +48,7 @@ const UserProfileDropdown = () => {
         <Button variant="ghost" size="sm" className="relative h-10 w-10 rounded-full hover-lift">
           <Avatar className="h-10 w-10">
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {user.initials}
+              {user.email?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -60,7 +60,7 @@ const UserProfileDropdown = () => {
       >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-sm font-medium leading-none">{user.email?.split('@')[0] || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
