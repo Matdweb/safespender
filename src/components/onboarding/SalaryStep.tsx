@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -102,6 +102,31 @@ const SalaryStep = ({ onNext, onBack }: SalaryStepProps) => {
   const handleSkip = () => {
     onNext({});
   };
+
+   useEffect(() => {
+      switch (frequency) {
+        case 'biweekly':
+          setQuarterlyAmounts([
+            { quarter: 'First Paycheck', amount: '' },
+            { quarter: 'Second Paycheck', amount: '' }
+          ]);
+          break;
+        case 'monthly':
+        case 'yearly':
+          setQuarterlyAmounts([
+            { quarter: 'Paycheck', amount: '' }
+          ]);
+          break;
+        default: // weekly or fallback to quarterly setup
+          setQuarterlyAmounts([
+            { quarter: 'Q1', amount: '' },
+            { quarter: 'Q2', amount: '' },
+            { quarter: 'Q3', amount: '' },
+            { quarter: 'Q4', amount: '' }
+          ]);
+          break;
+      }
+    }, [frequency]);
 
   return (
     <div className="space-y-8">
