@@ -311,6 +311,57 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     return generated;
   };
 
+  const generateRecurringTransactions = (startDate: Date, endDate: Date): Transaction[] => {
+    const recurring: Transaction[] = [];
+    
+    // Generate recurring expenses
+    transactions
+      .filter(t => t.recurring && t.type === 'expense')
+      .forEach(baseTransaction => {
+        if (!baseTransaction.recurring) return;
+        
+        const { type: recurringType, interval, dayOfMonth } = baseTransaction.recurring;
+        const baseDate = new Date(baseTransaction.date);
+        
+        let currentDate = new Date(Math.max(startDate.getTime(), baseDate.getTime()));
+        
+        while (currentDate <= endDate) {
+          // Generate next occurrence based on recurring type
+          let nextDate = new Date(currentDate);
+          
+          switch (recurringType) {
+            case 'weekly':
+              nextDate.setDate(currentDate.getDate() + (7 * interval));
+              break;
+            case 'biweekly':
+              nextDate.setDate(currentDate.getDate() + (14 * interval));
+              break;
+            case 'monthly':
+              nextDate.setMonth(currentDate.getMonth() + interval);
+              if (dayOfMonth) {
+                nextDate.setDate(Math.min(dayOfMonth, new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate()));
+              }
+              break;
+          }
+          
+          if (nextDate > currentDate && nextDate <= endDate) {
+            recurring.push({
+              ...baseTransaction,
+              id: `recurring-${baseTransaction.id}-${nextDate.getTime()}`,
+              date: nextDate.toISOString().split('T')[0]
+            });
+          }
+          
+          currentDate = nextDate;
+          
+          // Safety break to prevent infinite loops
+          if (recurring.length > 100) break;
+        }
+      });
+    
+    return recurring;
+  };
+
   const getTotalIncome = () => {
     if (!startDate) return 0;
 
@@ -507,6 +558,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       getSalary: () => salaryConfig,
       borrowFromNextIncome,
       setStartDate,
+      generateRecurringTransactions,
     }}>
       {children}
     </FinancialContext.Provider>

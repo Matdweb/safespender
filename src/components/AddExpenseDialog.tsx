@@ -18,6 +18,14 @@ interface AddExpenseDialogProps {
     description: string;
     isRecurring: boolean;
     isReserved: boolean;
+    recurring?: {
+      type: 'weekly' | 'monthly' | 'biweekly';
+      interval: number;
+      endDate?: string;
+      dayOfMonth?: number;
+      occurrencesPerMonth?: number;
+      daysOfMonth?: number[];
+    };
   }) => void;
 }
 
@@ -28,6 +36,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
   const [description, setDescription] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [isReserved, setIsReserved] = useState(false);
+  const [recurringType, setRecurringType] = useState<'weekly' | 'monthly' | 'biweekly'>('monthly');
 
   const categories = [
     'Housing', 'Food', 'Transportation', 'Utilities', 'Healthcare', 
@@ -39,14 +48,25 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
     
     if (!amount || parseFloat(amount) <= 0 || !category) return;
 
-    onAddExpense({
+    const expenseData = {
       amount: parseFloat(amount),
       date,
       category,
       description: description || category,
       isRecurring,
       isReserved
-    });
+    };
+
+    // Add recurring configuration if applicable
+    if (isRecurring) {
+      expenseData.recurring = {
+        type: recurringType,
+        interval: 1,
+        dayOfMonth: new Date(date).getDate()
+      };
+    }
+
+    onAddExpense(expenseData);
 
     // Reset form
     setAmount('');
@@ -55,18 +75,19 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
     setDescription('');
     setIsRecurring(false);
     setIsReserved(false);
+    setRecurringType('monthly');
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg w-full px-4 py-6 sm:px-6 sm:py-8">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 bg-destructive/5 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-destructive rotate-180" />
             </div>
-            Add Expense
+            💳 Add Expense
           </DialogTitle>
         </DialogHeader>
 
@@ -133,6 +154,22 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
               />
               <Label htmlFor="recurring" className="text-sm">Recurring expense</Label>
             </div>
+
+            {isRecurring && (
+              <div className="ml-6 space-y-2">
+                <Label>Frequency</Label>
+                <Select value={recurringType} onValueChange={(value: 'weekly' | 'monthly' | 'biweekly') => setRecurringType(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="flex items-center space-x-2">
               <Checkbox 

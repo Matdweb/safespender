@@ -77,12 +77,25 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
     { value: 'savings', label: 'Savings', icon: DollarSign, color: 'text-blue-600' },
   ];
 
+  const getModalTitle = () => {
+    switch (type) {
+      case 'income':
+        return '💰 Add Financial Item';
+      case 'expense':
+        return '💳 Add Financial Item';
+      case 'savings':
+        return '🎯 Add Financial Item';
+      default:
+        return '📊 Add Financial Item';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg w-full px-4 py-6 sm:px-6 sm:py-8">
         <DialogHeader>
           <DialogTitle>
-            Add Financial Item
+            {getModalTitle()}
             {selectedDate && (
               <span className="block text-sm text-muted-foreground font-normal mt-1">
                 {selectedDate.toLocaleDateString('en-US', { 

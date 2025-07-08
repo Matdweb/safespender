@@ -19,7 +19,7 @@ interface UpcomingEventsProps {
 }
 
 const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
-  const { transactions, goals, generateSalaryTransactions } = useFinancial();
+  const { transactions, goals, generateSalaryTransactions, generateRecurringTransactions } = useFinancial();
 
   // Generate comprehensive upcoming events for next 2 months
   const upcomingEvents = React.useMemo(() => {
@@ -29,7 +29,10 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
     // Get upcoming salary transactions
     const salaryTransactions = generateSalaryTransactions(today, twoMonthsAhead);
     
-    console.log(`Upcoming events: ${salaryTransactions.length} salary transactions generated`);
+    // Get recurring expense transactions
+    const recurringExpenses = generateRecurringTransactions ? generateRecurringTransactions(today, twoMonthsAhead) : [];
+    
+    console.log(`Upcoming events: ${salaryTransactions.length} salary transactions, ${recurringExpenses.length} recurring expenses generated`);
     
     // Convert salary transactions to events format
     const salaryEvents: Event[] = salaryTransactions
@@ -40,6 +43,21 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
       .map(t => ({
         id: t.id,
         type: 'income',
+        title: t.description,
+        amount: t.amount,
+        date: t.date,
+        recurring: true
+      }));
+
+    // Convert recurring expenses to events format
+    const recurringExpenseEvents: Event[] = recurringExpenses
+      .filter(t => {
+        const eventDate = new Date(t.date);
+        return eventDate >= today && eventDate <= twoMonthsAhead;
+      })
+      .map(t => ({
+        id: t.id,
+        type: 'expense',
         title: t.description,
         amount: t.amount,
         date: t.date,
@@ -96,13 +114,13 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
     });
 
     // Combine and sort all events by date
-    const allEvents = [...salaryEvents, ...futureOneTimeEvents, ...savingsEvents]
+    const allEvents = [...salaryEvents, ...recurringExpenseEvents, ...futureOneTimeEvents, ...savingsEvents]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 20); // Limit to first 20 events
 
     console.log(`Total upcoming events: ${allEvents.length}`);
     return allEvents;
-  }, [transactions, goals, generateSalaryTransactions]);
+  }, [transactions, goals, generateSalaryTransactions, generateRecurringTransactions]);
 
   const getEventIcon = (type: string) => {
     switch (type) {

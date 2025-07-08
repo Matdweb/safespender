@@ -184,7 +184,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
               <Settings className="w-4 h-4 text-primary" />
             </div>
-            Set Salary Configuration
+            💼 Set Salary Configuration
           </DialogTitle>
         </DialogHeader>
 
