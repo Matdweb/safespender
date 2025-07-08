@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,7 +61,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
   };
 
   const updateQuarterlyAmount = (quarter: string, amount: string) => {
-    setQuarterlyAmounts(prev => prev.map(q => 
+    setQuarterlyAmounts(prev => prev.map(q =>
       q.quarter === quarter ? { ...q, amount } : q
     ));
   };
@@ -96,7 +96,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validate()) {
       onSetSalary({
         frequency,
@@ -121,6 +121,31 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
     ]);
     setErrors({});
   };
+
+  useEffect(() => {
+    switch (frequency) {
+      case 'biweekly':
+        setQuarterlyAmounts([
+          { quarter: 'First Paycheck', amount: '' },
+          { quarter: 'Second Paycheck', amount: '' }
+        ]);
+        break;
+      case 'monthly':
+      case 'yearly':
+        setQuarterlyAmounts([
+          { quarter: 'Paycheck', amount: '' }
+        ]);
+        break;
+      default: // weekly or fallback to quarterly setup
+        setQuarterlyAmounts([
+          { quarter: 'Q1', amount: '' },
+          { quarter: 'Q2', amount: '' },
+          { quarter: 'Q3', amount: '' },
+          { quarter: 'Q4', amount: '' }
+        ]);
+        break;
+    }
+  }, [frequency]);
 
   return (
     <Dialog open={open} onOpenChange={(open) => {
@@ -170,7 +195,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
                 </Button>
               )}
             </div>
-            
+
             <div className="grid gap-3">
               {payDays.map((day, index) => (
                 <div key={index} className="flex gap-2">
@@ -197,12 +222,12 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
                 </div>
               ))}
             </div>
-            
+
             {errors.payDays && <p className="text-sm text-destructive">{errors.payDays}</p>}
             {Object.keys(errors).filter(k => k.startsWith('payDay-')).map(key => (
               <p key={key} className="text-sm text-destructive">{errors[key]}</p>
             ))}
-            
+
             <p className="text-xs text-muted-foreground">
               💡 Examples: 15 & 30 for mid-month and end-month, or just 1 for start of month
             </p>
@@ -210,7 +235,10 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
 
           {/* Quarterly Amounts */}
           <div className="space-y-3">
-            <Label>💰 Salary amount per paycheck (by quarter)</Label>
+            <Label>
+              💰 Salary amount per paycheck ({frequency === 'biweekly' ? 'per period' : frequency === 'monthly' ? 'monthly' : frequency === 'yearly' ? 'yearly' : 'quarterly'})
+            </Label>
+
             <div className="grid grid-cols-2 gap-4">
               {quarterlyAmounts.map((q) => (
                 <Card key={q.quarter} className="p-3 space-y-2">
