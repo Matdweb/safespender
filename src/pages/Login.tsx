@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/Logo';
-import { Eye, EyeOff, Mail, Lock, Chrome } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Chrome, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
@@ -16,8 +16,22 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showSignupSuccess, setShowSignupSuccess] = useState(false);
   const { login, signUp, isLoading } = useAuth();
   const { toast } = useToast();
+
+  // Get the correct redirect URL based on environment
+  const getRedirectUrl = () => {
+    if (typeof window !== 'undefined') {
+      // In production, use the production URL
+      if (window.location.hostname === 'safespender.lovable.app') {
+        return 'https://safespender.lovable.app/';
+      }
+      // For local development, use localhost
+      return `${window.location.origin}/`;
+    }
+    return 'https://safespender.lovable.app/';
+  };
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -73,9 +87,10 @@ const Login = () => {
         variant: "destructive",
       });
     } else {
+      setShowSignupSuccess(true);
       toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account",
+        title: "Registration successful!",
+        description: "Please check your inbox to confirm your email address",
       });
     }
   };
@@ -83,10 +98,12 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     try {
       setIsGoogleLoading(true);
+      const redirectUrl = getRedirectUrl();
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: redirectUrl
         }
       });
       
@@ -107,6 +124,39 @@ const Login = () => {
       setIsGoogleLoading(false);
     }
   };
+
+  if (showSignupSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
+        <div className="w-full max-w-md relative z-10">
+          <Card className="animate-scale-in bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
+            <CardHeader className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <CardTitle className="text-xl">Check Your Email</CardTitle>
+              <CardDescription>
+                We've sent a confirmation link to <strong>{email}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center text-sm text-muted-foreground">
+                <p>Click the link in your email to activate your account.</p>
+                <p className="mt-2">Didn't receive the email? Check your spam folder.</p>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowSignupSuccess(false)}
+              >
+                Back to Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
@@ -165,48 +215,48 @@ const Login = () => {
               
               <TabsContent value="signin" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
-              {/* Email Input */}
-              <div className="space-y-2">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`pl-10 transition-all duration-200 ${errors.email ? 'border-destructive focus:border-destructive' : ''
-                      }`}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>
-                )}
-              </div>
+                  {/* Email Input */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={`pl-10 transition-all duration-200 ${errors.email ? 'border-destructive focus:border-destructive' : ''
+                          }`}
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>
+                    )}
+                  </div>
 
-              {/* Password Input */}
-              <div className="space-y-2">
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={`pl-10 pr-10 transition-all duration-200 ${errors.password ? 'border-destructive focus:border-destructive' : ''
-                      }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>
-                )}
-              </div>
+                  {/* Password Input */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`pl-10 pr-10 transition-all duration-200 ${errors.password ? 'border-destructive focus:border-destructive' : ''
+                          }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>
+                    )}
+                  </div>
 
                   {/* Sign In Button */}
                   <Button

@@ -31,10 +31,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Get the correct redirect URL based on environment
+  const getRedirectUrl = () => {
+    if (typeof window !== 'undefined') {
+      // In production, use the production URL
+      if (window.location.hostname === 'safespender.lovable.app') {
+        return 'https://safespender.lovable.app/';
+      }
+      // For local development, use localhost
+      return `${window.location.origin}/`;
+    }
+    return 'https://safespender.lovable.app/';
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
@@ -62,6 +76,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false);
     
     if (error) {
+      // Return user-friendly error messages
+      if (error.message.includes('Invalid login credentials')) {
+        return { error: 'Incorrect email or password. Please try again.' };
+      }
+      if (error.message.includes('Email not confirmed')) {
+        return { error: 'Please check your email and click the confirmation link before signing in.' };
+      }
       return { error: error.message };
     }
     
@@ -71,7 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
     
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = getRedirectUrl();
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -84,6 +105,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false);
     
     if (error) {
+      // Return user-friendly error messages
+      if (error.message.includes('User already registered')) {
+        return { error: 'An account with this email already exists. Please sign in instead.' };
+      }
       return { error: error.message };
     }
     
