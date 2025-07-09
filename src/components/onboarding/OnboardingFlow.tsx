@@ -9,7 +9,6 @@ import SalaryStep from './SalaryStep';
 import ExpensesStep from './ExpensesStep';
 import GoalsStep from './GoalsStep';
 import SummaryStep from './SummaryStep';
-import { useFinancial } from '@/contexts/FinancialContext';
 
 interface OnboardingFlowProps {
   open: boolean;
@@ -50,7 +49,6 @@ const OnboardingFlow = ({ open, onComplete }: OnboardingFlowProps) => {
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     expenses: []
   });
-  const { completeOnboarding } = useFinancial();
 
   const steps = [
     { component: WelcomeStep, title: 'Welcome' },
@@ -73,7 +71,7 @@ const OnboardingFlow = ({ open, onComplete }: OnboardingFlowProps) => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      completeOnboarding();
+      // Onboarding completion is handled by SummaryStep
       onComplete();
     }
   };
@@ -85,7 +83,6 @@ const OnboardingFlow = ({ open, onComplete }: OnboardingFlowProps) => {
   };
 
   const handleClose = () => {
-    completeOnboarding();
     onComplete();
   };
 

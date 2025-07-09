@@ -14,7 +14,194 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          day_of_month: number | null
+          description: string
+          id: string
+          is_recurring: boolean
+          is_reserved: boolean
+          recurring_interval: number | null
+          recurring_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          day_of_month?: number | null
+          description: string
+          id?: string
+          is_recurring?: boolean
+          is_reserved?: boolean
+          recurring_interval?: number | null
+          recurring_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          day_of_month?: number | null
+          description?: string
+          id?: string
+          is_recurring?: boolean
+          is_reserved?: boolean
+          recurring_interval?: number | null
+          recurring_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      financial_profiles: {
+        Row: {
+          base_currency: string
+          created_at: string
+          id: string
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string
+          id?: string
+          start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          id?: string
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      salary_configurations: {
+        Row: {
+          created_at: string
+          days_of_month: number[]
+          frequency: string
+          id: string
+          quarterly_amounts: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_of_month: number[]
+          frequency: string
+          id?: string
+          quarterly_amounts: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_of_month?: number[]
+          frequency?: string
+          id?: string
+          quarterly_amounts?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings_goals: {
+        Row: {
+          contribution_frequency: string | null
+          created_at: string
+          current_amount: number
+          icon: string | null
+          id: string
+          name: string
+          recurring_contribution: number | null
+          target_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contribution_frequency?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          name: string
+          recurring_contribution?: number | null
+          target_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contribution_frequency?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          name?: string
+          recurring_contribution?: number | null
+          target_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          date: string
+          description: string
+          goal_id: string | null
+          id: string
+          is_reserved: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string
+          date: string
+          description: string
+          goal_id?: string | null
+          id?: string
+          is_reserved?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          date?: string
+          description?: string
+          goal_id?: string | null
+          id?: string
+          is_reserved?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

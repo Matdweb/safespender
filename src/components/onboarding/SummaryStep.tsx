@@ -1,9 +1,17 @@
 
 import React from 'react';
 import { OnboardingStepProps } from './types';
-import { useFinancial } from '@/contexts/FinancialContext';
 import { OnboardingData } from './OnboardingFlow';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  useCreateFinancialProfile,
+  useCreateSalaryConfiguration,
+  useCreateExpense,
+  useCreateSavingsGoal
+} from '@/hooks/useFinancialData';
+import { formatCurrency } from '@/utils/currencyUtils';
+import { toast } from 'sonner';
 
 interface Props {
   data: OnboardingData;
@@ -12,58 +20,84 @@ interface Props {
 }
 
 const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
-  const { setCurrency, setSalary, addGoal, addTransaction, setStartDate } = useFinancial();
+  const { user } = useAuth();
+  const createFinancialProfile = useCreateFinancialProfile();
+  const createSalaryConfiguration = useCreateSalaryConfiguration();
+  const createExpense = useCreateExpense();
+  const createSavingsGoal = useCreateSavingsGoal();
 
-  const handleComplete = () => {
-    console.log('🎯 Completing onboarding with data:', data);
-    
-    // Set app start date to today
-    const today = new Date().toISOString().split('T')[0];
-    setStartDate(today);
-    
-    // Set currency FIRST - this is critical for the base currency
-    if (data.currency) {
-      console.log('💰 Setting base currency:', data.currency);
-      setCurrency(data.currency);
+  const handleComplete = async () => {
+    if (!user) {
+      toast.error('You must be logged in to complete onboarding');
+      return;
     }
 
-    // Set salary configuration
-    if (data.salary) {
-      console.log('💰 Setting up salary:', data.salary);
-      setSalary(data.salary);
-    }
+    try {
+      console.log('🎯 Starting onboarding completion with data:', data);
 
-    // Add initial expenses
-    if (data.expenses && data.expenses.length > 0) {
-      console.log('💸 Adding initial expenses:', data.expenses);
-      data.expenses.forEach(expense => {
-        addTransaction({
-          type: 'expense',
-          amount: expense.amount,
-          description: expense.description,
-          date: today, // Use today as the date for initial expenses
-          category: expense.category,
-          isReserved: true, // Mark onboarding expenses as reserved
+      // 1. Create financial profile first
+      if (data.currency) {
+        console.log('💰 Creating financial profile with currency:', data.currency);
+        await createFinancialProfile.mutateAsync({
+          base_currency: data.currency,
+          start_date: new Date().toISOString().split('T')[0],
         });
-      });
-    }
+      }
 
-    // Add initial savings goal
-    if (data.goal) {
-      console.log('🎯 Adding savings goal:', data.goal);
-      addGoal({
-        name: data.goal.name,
-        targetAmount: data.goal.targetAmount,
-        currentAmount: 0,
-        recurringContribution: data.goal.recurringContribution,
-        contributionFrequency: data.goal.contributionFrequency,
-        icon: data.goal.icon,
-      });
-    }
+      // 2. Create salary configuration if provided
+      if (data.salary) {
+        console.log('💰 Creating salary configuration:', data.salary);
+        await createSalaryConfiguration.mutateAsync({
+          frequency: data.salary.frequency,
+          days_of_month: data.salary.daysOfMonth,
+          quarterly_amounts: data.salary.quarterlyAmounts,
+        });
+      }
 
-    // Complete onboarding
-    onNext();
+      // 3. Create expenses if provided
+      if (data.expenses && data.expenses.length > 0) {
+        console.log('💸 Creating expenses:', data.expenses);
+        for (const expense of data.expenses) {
+          await createExpense.mutateAsync({
+            description: expense.description,
+            amount: expense.amount,
+            category: expense.category,
+            is_recurring: true,
+            recurring_type: 'monthly',
+            recurring_interval: 1,
+            day_of_month: expense.dayOfMonth || null,
+            is_reserved: true, // Mark onboarding expenses as reserved
+          });
+        }
+      }
+
+      // 4. Create savings goal if provided
+      if (data.goal) {
+        console.log('🎯 Creating savings goal:', data.goal);
+        await createSavingsGoal.mutateAsync({
+          name: data.goal.name,
+          target_amount: data.goal.targetAmount,
+          current_amount: 0,
+          recurring_contribution: data.goal.recurringContribution || 0,
+          contribution_frequency: data.goal.contributionFrequency || null,
+          icon: data.goal.icon || '💰',
+        });
+      }
+
+      console.log('✅ Onboarding completed successfully');
+      toast.success('Welcome to SafeSpender! Your account has been set up.');
+      onNext();
+    } catch (error) {
+      console.error('❌ Error completing onboarding:', error);
+      toast.error('Failed to complete onboarding. Please try again.');
+    }
   };
+
+  const isLoading = 
+    createFinancialProfile.isPending || 
+    createSalaryConfiguration.isPending || 
+    createExpense.isPending || 
+    createSavingsGoal.isPending;
 
   return (
     <div className="space-y-4">
@@ -86,7 +120,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
           <ul>
             {data.salary.quarterlyAmounts.map((q, index) => (
               <li key={index}>
-                {q.quarter}: {q.amount}
+                {q.quarter}: {formatCurrency(q.amount, data.currency || 'USD')}
               </li>
             ))}
           </ul>
@@ -99,7 +133,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
           <ul>
             {data.expenses.map((expense, index) => (
               <li key={index}>
-                {expense.description} - {expense.amount} ({expense.category})
+                {expense.description} - {formatCurrency(expense.amount, data.currency || 'USD')} ({expense.category})
               </li>
             ))}
           </ul>
@@ -110,17 +144,19 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
         <div className="border rounded-md p-4">
           <strong>Goal:</strong> {data.goal.name}
           <br />
-          <strong>Target Amount:</strong> {data.goal.targetAmount}
+          <strong>Target Amount:</strong> {formatCurrency(data.goal.targetAmount, data.currency || 'USD')}
           <br />
-          <strong>Recurring Contribution:</strong> {data.goal.recurringContribution} ({data.goal.contributionFrequency})
+          <strong>Recurring Contribution:</strong> {formatCurrency(data.goal.recurringContribution || 0, data.currency || 'USD')} ({data.goal.contributionFrequency || 'none'})
         </div>
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onNext}>
+        <Button variant="outline" onClick={onNext} disabled={isLoading}>
           Complete Onboarding
         </Button>
-        <Button onClick={handleComplete}>Confirm</Button>
+        <Button onClick={handleComplete} disabled={isLoading}>
+          {isLoading ? 'Setting up...' : 'Confirm'}
+        </Button>
       </div>
     </div>
   );
