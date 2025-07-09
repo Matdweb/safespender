@@ -16,7 +16,7 @@ interface FreeToSpendCardProps {
 }
 
 const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }: FreeToSpendCardProps) => {
-  const { currency, convertCurrency, pendingExpenses, transactions } = useFinancialDashboard();
+  const { currency, convertCurrency, pendingExpenses, transactions, nextIncomeAmount, nextIncomeDate } = useFinancialDashboard();
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [displayCurrency, setDisplayCurrency] = useState(currency);
 
@@ -119,6 +119,13 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
             <div className="flex justify-between text-blue-200">
               <span>Previously Borrowed</span>
               <span className="font-medium">+{formatAmount(totalBorrowed)}</span>
+            </div>
+          )}
+
+          {nextIncomeAmount > 0 && nextIncomeDate && (
+            <div className="flex justify-between text-green-200">
+              <span>Next Income ({nextIncomeDate.toLocaleDateString()})</span>
+              <span className="font-medium">+{formatAmount(nextIncomeAmount)}</span>
             </div>
           )}
 

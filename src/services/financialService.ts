@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { generateRecurringExpenses, RecurringExpense } from '@/hooks/useRecurringExpenses';
 
 export type FinancialProfile = Tables<'financial_profiles'>;
 export type SalaryConfiguration = Tables<'salary_configurations'>;
@@ -202,3 +203,13 @@ export const deleteTransaction = async (id: string) => {
   
   if (error) throw error;
 };
+
+// Recurring Expenses Operations
+export const getRecurringExpenses = async (startDate: Date, endDate: Date) => {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) throw new Error('User not authenticated');
+
+  return await generateRecurringExpenses(user.user.id, startDate, endDate);
+};
+
+export { generateRecurringExpenses, type RecurringExpense };

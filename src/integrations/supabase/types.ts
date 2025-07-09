@@ -21,9 +21,11 @@ export type Database = {
           created_at: string
           day_of_month: number | null
           description: string
+          end_date: string | null
           id: string
           is_recurring: boolean
           is_reserved: boolean
+          next_occurrence_date: string | null
           recurring_interval: number | null
           recurring_type: string | null
           updated_at: string
@@ -35,9 +37,11 @@ export type Database = {
           created_at?: string
           day_of_month?: number | null
           description: string
+          end_date?: string | null
           id?: string
           is_recurring?: boolean
           is_reserved?: boolean
+          next_occurrence_date?: string | null
           recurring_interval?: number | null
           recurring_type?: string | null
           updated_at?: string
@@ -49,9 +53,11 @@ export type Database = {
           created_at?: string
           day_of_month?: number | null
           description?: string
+          end_date?: string | null
           id?: string
           is_recurring?: boolean
           is_reserved?: boolean
+          next_occurrence_date?: string | null
           recurring_interval?: number | null
           recurring_type?: string | null
           updated_at?: string
@@ -207,7 +213,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_recurring_expenses: {
+        Args: {
+          user_id_param: string
+          start_date_param: string
+          end_date_param: string
+        }
+        Returns: {
+          id: string
+          description: string
+          amount: number
+          category: string
+          date: string
+          is_recurring: boolean
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
