@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, DollarSign, PiggyBank, Calendar, Target } from 'lucide-react';
-import { useFinancial } from '@/contexts/FinancialContext';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useCreateTransaction, useUpdateSavingsGoal } from '@/hooks/useFinancialData';
 import { useToast } from '@/hooks/use-toast';
 import CurrencyDisplay from './CurrencyDisplay';
 
@@ -23,30 +24,25 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
   const [selectedGoalId, setSelectedGoalId] = useState('');
   
   const { 
-    getNextIncomeAmount, 
-    getNextIncomeDate, 
-    borrowFromNextIncome, 
-    getPendingExpenses,
-    goals,
-    updateGoal,
-    addTransaction
-  } = useFinancial();
+    nextIncomeAmount, 
+    nextIncomeDate, 
+    pendingExpenses,
+    goals
+  } = useFinancialDashboard();
+  const createTransactionMutation = useCreateTransaction();
+  const updateSavingsGoalMutation = useUpdateSavingsGoal();
   const { toast } = useToast();
-
-  const nextIncomeDate = getNextIncomeDate();
-  const nextIncomeAmount = getNextIncomeAmount();
-  const pendingExpenses = getPendingExpenses();
   
   // Calculate upcoming savings until next income
   const upcomingSavings = goals
-    .filter(goal => goal.recurringContribution > 0)
+    ?.filter(goal => goal.recurring_contribution && parseFloat(goal.recurring_contribution.toString()) > 0)
     .reduce((sum, goal) => {
       if (!nextIncomeDate) return sum;
       const today = new Date();
       const daysBetween = Math.ceil((nextIncomeDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
       let contributions = 0;
-      switch (goal.contributionFrequency) {
+      switch (goal.contribution_frequency) {
         case 'weekly':
           contributions = Math.floor(daysBetween / 7);
           break;
@@ -58,31 +54,31 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
           break;
       }
       
-      return sum + (contributions * goal.recurringContribution);
-    }, 0);
+      return sum + (contributions * parseFloat(goal.recurring_contribution.toString()));
+    }, 0) || 0;
 
   const availableAfterObligations = Math.max(0, nextIncomeAmount - pendingExpenses - upcomingSavings);
   const maxAdvanceAmount = Math.floor(availableAfterObligations * 0.8);
   
   // Calculate total savings available for withdrawal
-  const totalSavingsAvailable = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+  const totalSavingsAvailable = goals?.reduce((sum, goal) => sum + parseFloat(goal.current_amount.toString()), 0) || 0;
   
   // Calculate impact on selected goal
   const calculateGoalImpact = (goalId: string, withdrawAmount: number) => {
-    const goal = goals.find(g => g.id === goalId);
-    if (!goal || goal.recurringContribution <= 0) return null;
+    const goal = goals?.find(g => g.id === goalId);
+    if (!goal || !goal.recurring_contribution || parseFloat(goal.recurring_contribution.toString()) <= 0) return null;
     
-    const remainingToTarget = goal.targetAmount - (goal.currentAmount - withdrawAmount);
+    const remainingToTarget = parseFloat(goal.target_amount.toString()) - (parseFloat(goal.current_amount.toString()) - withdrawAmount);
     if (remainingToTarget <= 0) return null;
     
-    const weeksToComplete = Math.ceil(remainingToTarget / goal.recurringContribution);
+    const weeksToComplete = Math.ceil(remainingToTarget / parseFloat(goal.recurring_contribution.toString()));
     
     let timeUnit = 'weeks';
     let timeValue = weeksToComplete;
     
-    if (goal.contributionFrequency === 'biweekly') {
+    if (goal.contribution_frequency === 'biweekly') {
       timeValue = Math.ceil(weeksToComplete / 2);
-    } else if (goal.contributionFrequency === 'monthly') {
+    } else if (goal.contribution_frequency === 'monthly') {
       timeValue = Math.ceil(weeksToComplete / 4);
       timeUnit = 'months';
     }
@@ -90,46 +86,71 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
     return { timeValue, timeUnit };
   };
 
-  const handleAdvance = () => {
+  const handleAdvance = async () => {
     const amount = parseFloat(advanceAmount);
     if (amount > 0 && amount <= maxAdvanceAmount) {
-      borrowFromNextIncome(amount, reason || 'Income advance');
-      
-      toast({
-        title: "Advance Approved! 💰",
-        description: `$${amount.toLocaleString()} added to your available balance`,
-      });
-      
-      resetAndClose();
+      try {
+        await createTransactionMutation.mutateAsync({
+          type: 'income',
+          amount: amount,
+          description: reason || 'Income advance',
+          date: new Date().toISOString().split('T')[0],
+          category: 'advance',
+        });
+        
+        toast({
+          title: "Advance Approved! 💰",
+          description: `$${amount.toLocaleString()} added to your available balance`,
+        });
+        
+        resetAndClose();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to process advance",
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const handleSavingsWithdrawal = () => {
+  const handleSavingsWithdrawal = async () => {
     const amount = parseFloat(savingsAmount);
-    const goal = goals.find(g => g.id === selectedGoalId);
+    const goal = goals?.find(g => g.id === selectedGoalId);
     
-    if (amount > 0 && goal && amount <= goal.currentAmount) {
-      // Update the goal's current amount
-      updateGoal(selectedGoalId, {
-        currentAmount: goal.currentAmount - amount
-      });
-      
-      // Add a withdrawal transaction
-      addTransaction({
-        type: 'expense',
-        amount: -amount, // Negative because we're adding money back to free spend
-        description: `Withdrawn from ${goal.name} savings`,
-        date: new Date().toISOString().split('T')[0],
-        category: 'savings-withdrawal',
-        goalId: selectedGoalId
-      });
-      
-      toast({
-        title: "Savings Withdrawn! 🏦",
-        description: `$${amount.toLocaleString()} withdrawn from ${goal.name}`,
-      });
-      
-      resetAndClose();
+    if (amount > 0 && goal && amount <= parseFloat(goal.current_amount.toString())) {
+      try {
+        // Update the goal's current amount
+        await updateSavingsGoalMutation.mutateAsync({
+          id: selectedGoalId,
+          updates: {
+            current_amount: parseFloat(goal.current_amount.toString()) - amount
+          }
+        });
+        
+        // Add a withdrawal transaction
+        await createTransactionMutation.mutateAsync({
+          type: 'income', // Income because we're adding money back to free spend
+          amount: amount,
+          description: `Withdrawn from ${goal.name} savings`,
+          date: new Date().toISOString().split('T')[0],
+          category: 'savings-withdrawal',
+          goal_id: selectedGoalId
+        });
+        
+        toast({
+          title: "Savings Withdrawn! 🏦",
+          description: `$${amount.toLocaleString()} withdrawn from ${goal.name}`,
+        });
+        
+        resetAndClose();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to process withdrawal",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -150,7 +171,7 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
     'Other'
   ];
 
-  const selectedGoal = goals.find(g => g.id === selectedGoalId);
+  const selectedGoal = goals?.find(g => g.id === selectedGoalId);
   const withdrawAmount = parseFloat(savingsAmount) || 0;
   const goalImpact = selectedGoal ? calculateGoalImpact(selectedGoalId, withdrawAmount) : null;
 
@@ -285,17 +306,17 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
                     <SelectValue placeholder="Select a goal to withdraw from" />
                   </SelectTrigger>
                   <SelectContent>
-                    {goals.filter(goal => goal.currentAmount > 0).map((goal) => (
+                    {goals?.filter(goal => parseFloat(goal.current_amount.toString()) > 0).map((goal) => (
                       <SelectItem key={goal.id} value={goal.id}>
                         <div className="flex items-center gap-2">
                           <span>{goal.icon}</span>
                           <span>{goal.name}</span>
                           <span className="text-muted-foreground">
-                            (<CurrencyDisplay amount={goal.currentAmount} className="inline" /> saved)
+                            (<CurrencyDisplay amount={parseFloat(goal.current_amount.toString())} className="inline" /> saved)
                           </span>
                         </div>
                       </SelectItem>
-                    ))}
+                    )) || []}
                   </SelectContent>
                 </Select>
               </div>
@@ -312,11 +333,11 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
                       value={savingsAmount}
                       onChange={(e) => setSavingsAmount(e.target.value)}
                       className="pl-10"
-                      max={selectedGoal.currentAmount}
+                      max={parseFloat(selectedGoal.current_amount.toString())}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Maximum: <CurrencyDisplay amount={selectedGoal.currentAmount} className="inline" />
+                    Maximum: <CurrencyDisplay amount={parseFloat(selectedGoal.current_amount.toString())} className="inline" />
                   </p>
                 </div>
               )}
@@ -341,17 +362,17 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
                 <div className="bg-muted/50 p-3 rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Goal Target:</span>
-                    <span className="font-medium"><CurrencyDisplay amount={selectedGoal.targetAmount} className="inline" /></span>
+                    <span className="font-medium"><CurrencyDisplay amount={parseFloat(selectedGoal.target_amount.toString())} className="inline" /></span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Currently Saved:</span>
-                    <span><CurrencyDisplay amount={selectedGoal.currentAmount} className="inline" /></span>
+                    <span><CurrencyDisplay amount={parseFloat(selectedGoal.current_amount.toString())} className="inline" /></span>
                   </div>
                   {withdrawAmount > 0 && (
                     <div className="flex justify-between text-sm text-destructive">
                       <span>After Withdrawal:</span>
                       <span className="font-medium">
-                        <CurrencyDisplay amount={selectedGoal.currentAmount - withdrawAmount} className="inline" />
+                        <CurrencyDisplay amount={parseFloat(selectedGoal.current_amount.toString()) - withdrawAmount} className="inline" />
                       </span>
                     </div>
                   )}
@@ -360,7 +381,7 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
 
               <Button 
                 onClick={handleSavingsWithdrawal} 
-                disabled={!selectedGoal || !savingsAmount || parseFloat(savingsAmount) <= 0 || parseFloat(savingsAmount) > selectedGoal.currentAmount}
+                disabled={!selectedGoal || !savingsAmount || parseFloat(savingsAmount) <= 0 || parseFloat(savingsAmount) > parseFloat(selectedGoal.current_amount.toString())}
                 className="w-full"
                 variant="destructive"
               >

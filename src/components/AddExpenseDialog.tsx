@@ -47,9 +47,12 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
     
     if (!amount || parseFloat(amount) <= 0 || !category) return;
 
+    // Ensure date is properly formatted (YYYY-MM-DD)
+    const formattedDate = new Date(date).toISOString().split('T')[0];
+    
     const expenseData = {
       amount: parseFloat(amount),
-      date,
+      date: formattedDate,
       category,
       description: description || category,
       isRecurring,
@@ -58,7 +61,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onAddExpense }: AddExpenseDialog
         recurring: {
           type: recurringType,
           interval: 1,
-          dayOfMonth: new Date(date).getDate()
+          dayOfMonth: new Date(formattedDate).getDate()
         }
       })
     };

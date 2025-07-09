@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFinancial } from '@/contexts/FinancialContext';
-import { Goal } from '@/contexts/FinancialContext';
+import { useSavingsGoals } from '@/hooks/useFinancialData';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 import { getCurrencySymbol, formatCurrency } from '@/utils/currencyUtils';
 
 interface AddSavingsDialogProps {
@@ -17,12 +17,13 @@ interface AddSavingsDialogProps {
 }
 
 const AddSavingsDialog = ({ open, onOpenChange, onAddSavings, selectedDate }: AddSavingsDialogProps) => {
-  const { goals, getFreeToSpend, currency } = useFinancial();
+  const { data: goals } = useSavingsGoals();
+  const { freeToSpend, currency } = useFinancialDashboard();
   const [amount, setAmount] = useState('');
   const [selectedGoalId, setSelectedGoalId] = useState('');
   const [description, setDescription] = useState('');
 
-  const availableAmount = getFreeToSpend();
+  const availableAmount = freeToSpend;
   const currencySymbol = getCurrencySymbol(currency);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,7 +39,7 @@ const AddSavingsDialog = ({ open, onOpenChange, onAddSavings, selectedDate }: Ad
       return;
     }
 
-    const selectedGoal = goals.find(g => g.id === selectedGoalId);
+    const selectedGoal = goals?.find(g => g.id === selectedGoalId);
     const finalDescription = description || `Extra contribution to ${selectedGoal?.name}`;
 
     onAddSavings({
@@ -69,11 +70,11 @@ const AddSavingsDialog = ({ open, onOpenChange, onAddSavings, selectedDate }: Ad
                 <SelectValue placeholder="Select a savings goal" />
               </SelectTrigger>
               <SelectContent>
-                {goals.map((goal) => (
+                {goals?.map((goal) => (
                   <SelectItem key={goal.id} value={goal.id}>
                     {goal.icon} {goal.name}
                   </SelectItem>
-                ))}
+                )) || []}
               </SelectContent>
             </Select>
           </div>

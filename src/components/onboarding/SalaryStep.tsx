@@ -25,7 +25,8 @@ const SalaryStep = ({ onNext, onBack }: SalaryStepProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const addPayDay = () => {
-    if (payDays.length < 3) {
+    const maxDays = frequency === 'weekly' ? 4 : frequency === 'biweekly' ? 2 : 3;
+    if (payDays.length < maxDays) {
       setPayDays([...payDays, '']);
     }
   };
@@ -54,8 +55,19 @@ const SalaryStep = ({ onNext, onBack }: SalaryStepProps) => {
     // Validate pay days
     payDays.forEach((day, index) => {
       const dayNum = parseInt(day);
-      if (!day || isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
-        newErrors[`payDay-${index}`] = 'Enter a valid day (1-31)';
+      let maxDay = 31;
+      let errorMessage = 'Enter a valid day (1-31)';
+      
+      if (frequency === 'weekly') {
+        maxDay = 7;
+        errorMessage = 'Enter a valid day of week (1-7)';
+      } else if (frequency === 'yearly') {
+        maxDay = 365;
+        errorMessage = 'Enter a valid day of year (1-365)';
+      }
+      
+      if (!day || isNaN(dayNum) || dayNum < 1 || dayNum > maxDay) {
+        newErrors[`payDay-${index}`] = errorMessage;
       }
     });
 
@@ -104,6 +116,7 @@ const SalaryStep = ({ onNext, onBack }: SalaryStepProps) => {
   };
 
    useEffect(() => {
+      // Update quarterlyAmounts based on frequency
       switch (frequency) {
         case 'biweekly':
           setQuarterlyAmounts([
@@ -112,19 +125,47 @@ const SalaryStep = ({ onNext, onBack }: SalaryStepProps) => {
           ]);
           break;
         case 'monthly':
+          setQuarterlyAmounts([
+            { quarter: 'Monthly Pay', amount: '' }
+          ]);
+          break;
         case 'yearly':
           setQuarterlyAmounts([
-            { quarter: 'Paycheck', amount: '' }
+            { quarter: 'Annual Salary', amount: '' }
           ]);
           break;
-        default: // weekly or fallback to quarterly setup
+        case 'weekly':
           setQuarterlyAmounts([
-            { quarter: 'Q1', amount: '' },
-            { quarter: 'Q2', amount: '' },
-            { quarter: 'Q3', amount: '' },
-            { quarter: 'Q4', amount: '' }
+            { quarter: 'Weekly Pay', amount: '' }
           ]);
           break;
+        default:
+          setQuarterlyAmounts([
+            { quarter: 'Pay Amount', amount: '' }
+          ]);
+          break;
+      }
+
+      // Dynamically update payDays based on frequency
+      switch (frequency) {
+        case 'weekly':
+          // For weekly, default to Fridays (5th day of week)
+          setPayDays(['5']);
+          break;
+        case 'biweekly':
+          // For biweekly, default to 15th and 30th
+          setPayDays(['15', '30']);
+          break;
+        case 'monthly':
+          // For monthly, default to 15th
+          setPayDays(['15']);
+          break;
+        case 'yearly':
+          // For yearly, default to 1st (start of year)
+          setPayDays(['1']);
+          break;
+        default:
+          setPayDays(['15']);
       }
     }, [frequency]);
 
@@ -162,8 +203,14 @@ const SalaryStep = ({ onNext, onBack }: SalaryStepProps) => {
         {/* Pay Days */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label>📅 Which days of the month are you paid?</Label>
-            {payDays.length < 3 && (
+            <Label>
+              📅 {frequency === 'weekly' ? 'Which days of the week are you paid?' : 
+                   frequency === 'yearly' ? 'Which month/day are you paid?' : 
+                   'Which days of the month are you paid?'}
+            </Label>
+            {((frequency === 'weekly' && payDays.length < 4) || 
+              (frequency === 'biweekly' && payDays.length < 2) ||
+              (frequency === 'monthly' && payDays.length < 3)) && (
               <Button
                 type="button"
                 variant="outline"
@@ -183,12 +230,19 @@ const SalaryStep = ({ onNext, onBack }: SalaryStepProps) => {
                   type="number"
                   value={day}
                   onChange={(e) => updatePayDay(index, e.target.value)}
-                  placeholder="Day of month (1-31)"
+                  placeholder={
+                    frequency === 'weekly' ? 'Day of week (1-7)' :
+                    frequency === 'yearly' ? 'Day of year (1-365)' :
+                    'Day of month (1-31)'
+                  }
                   min="1"
-                  max="31"
+                  max={frequency === 'weekly' ? '7' : frequency === 'yearly' ? '365' : '31'}
                   className={errors[`payDay-${index}`] ? 'border-destructive' : ''}
                 />
-                {payDays.length > 1 && (
+                {((frequency === 'weekly' && payDays.length > 1) ||
+                  (frequency === 'biweekly' && payDays.length > 1) ||
+                  (frequency === 'monthly' && payDays.length > 1) ||
+                  (frequency === 'yearly' && payDays.length > 1)) && (
                   <Button
                     type="button"
                     variant="ghost"

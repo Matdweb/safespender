@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, DollarSign } from 'lucide-react';
-import { useFinancial } from '@/contexts/FinancialContext';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useCreateTransaction } from '@/hooks/useFinancialData';
 import { useToast } from '@/hooks/use-toast';
 import CurrencyDisplay from './CurrencyDisplay';
 
@@ -19,28 +20,24 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const { 
-    getNextIncomeAmount, 
-    getNextIncomeDate, 
-    borrowFromNextIncome, 
-    getPendingExpenses,
+    nextIncomeAmount, 
+    nextIncomeDate, 
+    pendingExpenses,
     goals
-  } = useFinancial();
+  } = useFinancialDashboard();
+  const createTransactionMutation = useCreateTransaction();
   const { toast } = useToast();
-
-  const nextIncomeDate = getNextIncomeDate();
-  const nextIncomeAmount = getNextIncomeAmount();
-  const pendingExpenses = getPendingExpenses();
   
   // Calculate upcoming savings until next income
   const upcomingSavings = goals
-    .filter(goal => goal.recurringContribution > 0)
+    ?.filter(goal => goal.recurring_contribution && parseFloat(goal.recurring_contribution.toString()) > 0)
     .reduce((sum, goal) => {
       if (!nextIncomeDate) return sum;
       const today = new Date();
       const daysBetween = Math.ceil((nextIncomeDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
       let contributions = 0;
-      switch (goal.contributionFrequency) {
+      switch (goal.contribution_frequency) {
         case 'weekly':
           contributions = Math.floor(daysBetween / 7);
           break;
@@ -52,25 +49,39 @@ const EmergencyBorrowModal = ({ open, onOpenChange }: EmergencyBorrowModalProps)
           break;
       }
       
-      return sum + (contributions * goal.recurringContribution);
-    }, 0);
+      return sum + (contributions * parseFloat(goal.recurring_contribution.toString()));
+    }, 0) || 0;
 
   const availableAfterObligations = Math.max(0, nextIncomeAmount - pendingExpenses - upcomingSavings);
   const maxBorrowAmount = Math.floor(availableAfterObligations * 0.8); // Max 80% of available amount
   const isValidAmount = amount && parseFloat(amount) > 0 && parseFloat(amount) <= maxBorrowAmount;
 
-  const handleBorrow = () => {
+  const handleBorrow = async () => {
     if (isValidAmount) {
-      borrowFromNextIncome(parseFloat(amount), reason || 'Emergency advance');
-      
-      toast({
-        title: "Advance Approved! 💰",
-        description: `$${parseFloat(amount).toLocaleString()} added to your available balance`,
-      });
-      
-      setAmount('');
-      setReason('');
-      onOpenChange(false);
+      try {
+        await createTransactionMutation.mutateAsync({
+          type: 'income',
+          amount: parseFloat(amount),
+          description: reason || 'Emergency advance',
+          date: new Date().toISOString().split('T')[0],
+          category: 'advance',
+        });
+        
+        toast({
+          title: "Advance Approved! 💰",
+          description: `$${parseFloat(amount).toLocaleString()} added to your available balance`,
+        });
+        
+        setAmount('');
+        setReason('');
+        onOpenChange(false);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to process advance",
+          variant: "destructive"
+        });
+      }
     }
   };
 
