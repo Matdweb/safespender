@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import FreeToSpendCard from '@/components/FreeToSpendCard';
@@ -11,6 +10,7 @@ import AddExpenseDialog from '@/components/AddExpenseDialog';
 import AddSavingsDialog from '@/components/AddSavingsDialog';
 import SetSalaryModal from '@/components/SetSalaryModal';
 import LoadingScreen from '@/components/LoadingScreen';
+import TourAutoStarter from '@/components/tour/TourAutoStarter';
 import { useToast } from '@/hooks/use-toast';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 import { useCreateTransaction, useCreateSavingsGoal, useUpdateSalaryConfiguration, useCreateSalaryConfiguration } from '@/hooks/useFinancialData';
@@ -217,6 +217,7 @@ const Index = () => {
   return (
     <div className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 transition-colors duration-300`}>
       <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      <TourAutoStarter />
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
@@ -230,7 +231,7 @@ const Index = () => {
         </div>
 
         {/* Free to Spend Card - Hero */}
-        <div className="animate-scale-in">
+        <div className="animate-scale-in" data-tour="free-to-spend">
           <FreeToSpendCard
             amount={freeToSpend}
             balance={totalIncome - totalExpenses}
@@ -240,7 +241,7 @@ const Index = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }} data-tour="quick-actions">
           <QuickActions
             onAddIncome={() => setShowIncomeDialog(true)}
             onAddExpense={() => setShowExpenseDialog(true)}
@@ -261,7 +262,7 @@ const Index = () => {
 
         {/* Two Column Layout */}
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="animate-slide-up" style={{ animationDelay: '0.2s' }} data-tour="upcoming-events">
             <UpcomingEvents events={upcomingEvents} />
           </div>
           <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>

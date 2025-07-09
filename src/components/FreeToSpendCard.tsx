@@ -140,6 +140,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
             variant="secondary"
             className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30"
             onClick={() => setShowBorrowModal(true)}
+            data-tour="borrow-button"
           >
             <DollarSign className="w-4 h-4 mr-2" />
             I need more money

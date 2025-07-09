@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import Logo from './Logo';
-import UserProfileDropdown from './UserProfileDropdown';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Menu, X } from 'lucide-react';
-import { useLocation, Link } from 'react-router-dom';
+import { Moon, Sun, Menu, X, LogOut, Settings, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Link, useLocation } from 'react-router-dom';
+import Logo from '@/components/Logo';
+import UserProfileDropdown from '@/components/UserProfileDropdown';
+import { useFeatureTour } from '@/hooks/useFeatureTour';
+import { useToast } from '@/hooks/use-toast';
 
 interface HeaderProps {
   darkMode: boolean;
@@ -14,93 +15,194 @@ interface HeaderProps {
 }
 
 const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
   const location = useLocation();
-  const { user } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { startTour, resetTour, hasSeenTour } = useFeatureTour();
+  const { toast } = useToast();
 
-  const navigationLinks = [
-    { to: '/', label: 'Dashboard' },
-    { to: '/calendar', label: 'Calendar' },
-    { to: '/goals', label: 'Goals' }
-  ];
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
-  const isActivePath = (path: string) => location.pathname === path;
+  const handleStartTour = () => {
+    if (location.pathname !== '/') {
+      toast({
+        title: "Starting Tour",
+        description: "Redirecting to dashboard to begin the feature tour...",
+      });
+    }
+    startTour();
+    setIsMenuOpen(false);
+  };
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Logo size="md" />
-        
-        {/* Desktop Navigation */}
-        {user && (
-          <nav className="hidden md:flex items-center gap-6">
-            {navigationLinks.map(({ to, label }) => (
-              <Link 
-                key={to}
-                to={to} 
-                className={`text-muted-foreground hover:text-primary transition-colors ${
-                  isActivePath(to) ? 'text-primary font-medium' : ''
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4">
+        <div className="flex h-14 items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 hover-scale">
+            <Logo className="h-8 w-auto" />
+          </Link>
+
+          {/* Desktop Navigation */}
+          {user && (
+            <nav className="hidden md:flex items-center space-x-6">
+              <Link
+                to="/"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive('/') ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
-                {label}
+                Dashboard
               </Link>
-            ))}
-          </nav>
-        )}
+              <Link
+                to="/calendar"
+                data-tour="calendar-nav"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive('/calendar') ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                Calendar
+              </Link>
+              <Link
+                to="/goals"
+                data-tour="goals-nav"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive('/goals') ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                Goals
+              </Link>
+            </nav>
+          )}
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleDarkMode}
-            className="rounded-full"
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-          
-          {user && (
-            <>
-              {/* Mobile Menu */}
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild>
+          {/* Right Side Actions */}
+          <div className="flex items-center space-x-2">
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleDarkMode}
+              className="h-9 w-9 p-0"
+            >
+              {darkMode ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+
+            {user ? (
+              <>
+                {/* Help Button - Desktop */}
+                <div className="hidden md:block">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="md:hidden rounded-full"
+                    onClick={handleStartTour}
+                    className="h-9 px-3"
                   >
-                    <Menu className="w-4 h-4" />
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    Help
                   </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-64">
-                  <div className="flex flex-col space-y-4 mt-8">
-                    {navigationLinks.map(({ to, label }) => (
-                      <Link
-                        key={to}
-                        to={to}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`text-lg font-medium transition-colors p-3 rounded-lg ${
-                          isActivePath(to) 
-                            ? 'text-primary bg-primary/10' 
-                            : 'text-muted-foreground hover:text-primary hover:bg-accent/50'
-                        }`}
-                      >
-                        {label}
-                      </Link>
-                    ))}
-                    <div className="border-t pt-4">
-                      <UserProfileDropdown />
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+                </div>
 
-              {/* Desktop Profile */}
-              <div className="hidden md:block">
-                <UserProfileDropdown />
+                {/* User Profile Dropdown */}
+                <div className="hidden md:block">
+                  <UserProfileDropdown onStartTour={handleStartTour} />
+                </div>
+
+                {/* Mobile Menu Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden h-9 w-9 p-0"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
+                  {isMenuOpen ? (
+                    <X className="h-4 w-4" />
+                  ) : (
+                    <Menu className="h-4 w-4" />
+                  )}
+                </Button>
+              </>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/login">Get Started</Link>
+                </Button>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && user && (
+          <div className="md:hidden border-t bg-background/95 backdrop-blur">
+            <nav className="flex flex-col space-y-1 px-4 py-4">
+              <Link
+                to="/"
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isActive('/') 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:text-primary hover:bg-muted'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/calendar"
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isActive('/calendar') 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:text-primary hover:bg-muted'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Calendar
+              </Link>
+              <Link
+                to="/goals"
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isActive('/goals') 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:text-primary hover:bg-muted'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Goals
+              </Link>
+              
+              <div className="border-t pt-4 mt-4">
+                <button
+                  onClick={handleStartTour}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-colors flex items-center"
+                >
+                  <HelpCircle className="h-4 w-4 mr-3" />
+                  Feature Tour
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-colors flex items-center"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Sign Out
+                </button>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

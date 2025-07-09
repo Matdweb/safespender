@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,6 +15,7 @@ import Landing from "./pages/Landing";
 import Calendar from "./pages/Calendar";
 import Goals from "./pages/Goals";
 import NotFound from "./pages/NotFound";
+import FeatureTour from "@/components/tour/FeatureTour";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +31,8 @@ const OnboardingChecker = ({ children }: { children: React.ReactNode }) => {
       <OnboardingFlow
         open={true}
         onComplete={() => {
-          // Onboarding completion is handled by the SummaryStep
+          // Mark that tour should start after onboarding
+          localStorage.setItem('safespender-start-tour-after-onboarding', 'true');
           window.location.reload(); // Refresh to update the context
         }}
       />
@@ -39,6 +40,23 @@ const OnboardingChecker = ({ children }: { children: React.ReactNode }) => {
   }
 
   return <>{children}</>;
+};
+
+const TourStarter = () => {
+  const { startTour, hasSeenTour } = useFeatureTour();
+
+  useEffect(() => {
+    const shouldStartTour = localStorage.getItem('safespender-start-tour-after-onboarding');
+    if (shouldStartTour === 'true' && !hasSeenTour) {
+      localStorage.removeItem('safespender-start-tour-after-onboarding');
+      // Start tour after a brief delay to ensure page is loaded
+      setTimeout(() => {
+        startTour();
+      }, 1000);
+    }
+  }, [startTour, hasSeenTour]);
+
+  return null;
 };
 
 const AppRoutes = () => {
@@ -49,50 +67,53 @@ const AppRoutes = () => {
   }
 
   return (
-    <Routes>
-      <Route 
-        path="/" 
-        element={
-          user ? (
+    <>
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            user ? (
+              <ProtectedRoute>
+                <FinancialProvider>
+                  <OnboardingChecker>
+                    <Index />
+                  </OnboardingChecker>
+                </FinancialProvider>
+              </ProtectedRoute>
+            ) : (
+              <Landing />
+            )
+          } 
+        />
+        <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+        <Route 
+          path="/calendar" 
+          element={
             <ProtectedRoute>
               <FinancialProvider>
                 <OnboardingChecker>
-                  <Index />
+                  <Calendar />
                 </OnboardingChecker>
               </FinancialProvider>
             </ProtectedRoute>
-          ) : (
-            <Landing />
-          )
-        } 
-      />
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route 
-        path="/calendar" 
-        element={
-          <ProtectedRoute>
-            <FinancialProvider>
-              <OnboardingChecker>
-                <Calendar />
-              </OnboardingChecker>
-            </FinancialProvider>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/goals" 
-        element={
-          <ProtectedRoute>
-            <FinancialProvider>
-              <OnboardingChecker>
-                <Goals />
-              </OnboardingChecker>
-            </FinancialProvider>
-          </ProtectedRoute>
-        } 
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+          } 
+        />
+        <Route 
+          path="/goals" 
+          element={
+            <ProtectedRoute>
+              <FinancialProvider>
+                <OnboardingChecker>
+                  <Goals />
+                </OnboardingChecker>
+              </FinancialProvider>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <FeatureTour />
+    </>
   );
 };
 
