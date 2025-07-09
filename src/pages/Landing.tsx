@@ -1,30 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Calendar, 
-  DollarSign, 
-  TrendingUp, 
-  Target, 
-  AlertCircle,
-  Moon,
-  Sun,
-  ArrowRight,
-  CheckCircle,
-  Smartphone,
-  BarChart3,
-  Clock
-} from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Target, AlertCircle, Moon, Sun, ArrowRight, CheckCircle, Smartphone, BarChart3, Clock } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-
 const Landing = () => {
   const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
@@ -35,56 +22,42 @@ const Landing = () => {
 
   // Load theme from cookie on mount
   useEffect(() => {
-    const savedTheme = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('theme='))
-      ?.split('=')[1];
-    
-    const prefersDark = savedTheme === 'dark' || 
-      (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
+    const savedTheme = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
+    const prefersDark = savedTheme === 'dark' || !savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches;
     setDarkMode(prefersDark);
     document.documentElement.classList.toggle('dark', prefersDark);
   }, []);
-
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
     document.documentElement.classList.toggle('dark', newMode);
-    
+
     // Save to cookie
     document.cookie = `theme=${newMode ? 'dark' : 'light'}; path=/; max-age=${365 * 24 * 60 * 60}`;
   };
-
   const scrollToFeatures = () => {
-    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('features')?.scrollIntoView({
+      behavior: 'smooth'
+    });
   };
-
-  const features = [
-    {
-      icon: DollarSign,
-      title: "Free to Spend Today",
-      description: "Real-time calculation of your available balance after all planned expenses and savings goals."
-    },
-    {
-      icon: TrendingUp,
-      title: "Smart Income Forecasting",
-      description: "Automatically adjusts to your pay cycle and predicts future income with intelligent algorithms."
-    },
-    {
-      icon: Target,
-      title: "Goal-Based Savings",
-      description: "Track, delay, or accelerate your savings goals dynamically based on your financial situation."
-    },
-    {
-      icon: AlertCircle,
-      title: "Emergency Support",
-      description: "Tap into future income or savings when you need extra money with smart recommendations."
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const features = [{
+    icon: DollarSign,
+    title: "Free to Spend Today",
+    description: "Real-time calculation of your available balance after all planned expenses and savings goals."
+  }, {
+    icon: TrendingUp,
+    title: "Smart Income Forecasting",
+    description: "Automatically adjusts to your pay cycle and predicts future income with intelligent algorithms."
+  }, {
+    icon: Target,
+    title: "Goal-Based Savings",
+    description: "Track, delay, or accelerate your savings goals dynamically based on your financial situation."
+  }, {
+    icon: AlertCircle,
+    title: "Emergency Support",
+    description: "Tap into future income or savings when you need extra money with smart recommendations."
+  }];
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -92,26 +65,17 @@ const Landing = () => {
           
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center gap-6">
-              <button 
-                onClick={scrollToFeatures}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
+              <button onClick={scrollToFeatures} className="text-muted-foreground hover:text-primary transition-colors">
                 Features
               </button>
-              <button 
-                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
+              <button onClick={() => document.getElementById('pricing')?.scrollIntoView({
+              behavior: 'smooth'
+            })} className="text-muted-foreground hover:text-primary transition-colors">
                 Pricing
               </button>
             </nav>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-              className="rounded-full"
-            >
+            <Button variant="ghost" size="sm" onClick={toggleDarkMode} className="rounded-full">
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
             
@@ -155,12 +119,7 @@ const Landing = () => {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="text-lg px-8 py-6"
-                onClick={scrollToFeatures}
-              >
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6" onClick={scrollToFeatures}>
                 Learn More
               </Button>
             </div>
@@ -256,8 +215,7 @@ const Landing = () => {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feature, index) => (
-                <Card key={index} className="hover-lift">
+              {features.map((feature, index) => <Card key={index} className="hover-lift">
                   <CardHeader>
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                       <feature.icon className="w-6 h-6 text-primary" />
@@ -267,8 +225,7 @@ const Landing = () => {
                   <CardContent>
                     <CardDescription>{feature.description}</CardDescription>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </div>
@@ -365,25 +322,16 @@ const Landing = () => {
               </a>
             </nav>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-              className="rounded-full"
-            >
+            <Button variant="ghost" size="sm" onClick={toggleDarkMode} className="rounded-full">
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           </div>
           
           <div className="mt-8 pt-8 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground">
-              © 2024 SafeSpender. All rights reserved.
-            </p>
+            <p className="text-sm text-muted-foreground">© 2025 SafeSpender. All rights reserved.</p>
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Landing;
