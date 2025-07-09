@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { useTransactions } from './useFinancialData';
 import { useFinancialDashboard } from './useFinancialDashboard';
+import { CalendarItem } from '@/types/calendar';
 
 export interface CalendarTransaction {
   id: string;
@@ -32,7 +33,7 @@ export const useCalendarData = (currentDate: Date) => {
       })
       .map(t => ({
         id: t.id,
-        type: t.type,
+        type: t.type as 'income' | 'expense' | 'savings',
         title: t.description,
         amount: parseFloat(t.amount.toString()),
         date: t.date,
@@ -44,7 +45,7 @@ export const useCalendarData = (currentDate: Date) => {
     const salaryTransactions = generateSalaryTransactions(startOfRange, endOfRange);
     const salaryItems = salaryTransactions.map(t => ({
       id: t.id,
-      type: t.type as 'income' | 'expense' | 'savings',
+      type: 'income' as const,
       title: t.description,
       amount: t.amount,
       date: t.date,

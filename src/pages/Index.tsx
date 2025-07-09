@@ -15,6 +15,16 @@ import { useToast } from '@/hooks/use-toast';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 import { useCreateTransaction, useCreateSavingsGoal, useUpdateSalaryConfiguration, useCreateSalaryConfiguration } from '@/hooks/useFinancialData';
 
+interface Transaction {
+  id: string;
+  type: 'income' | 'expense' | 'savings';
+  amount: number | string;
+  description: string;
+  date: string;
+  category?: string;
+  created_at?: string;
+}
+
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
@@ -176,6 +186,26 @@ const Index = () => {
     }
   };
 
+  // Convert database transactions to component format
+  const convertedTransactions: Transaction[] = transactions ? transactions.map(t => ({
+    id: t.id,
+    type: t.type as 'income' | 'expense' | 'savings',
+    amount: t.amount,
+    description: t.description,
+    date: t.date,
+    category: t.category || undefined,
+    created_at: t.created_at
+  })) : [];
+
+  // Convert salary configuration for component compatibility
+  const convertedSalary = salary ? {
+    frequency: salary.frequency as 'weekly' | 'biweekly' | 'monthly' | 'yearly',
+    daysOfMonth: salary.days_of_month,
+    quarterlyAmounts: Array.isArray(salary.quarterly_amounts) 
+      ? salary.quarterly_amounts as { quarter: string; amount: number; }[]
+      : []
+  } : null;
+
   useEffect(() => {
     document.body.classList.add('animate-fade-in');
   }, []);
@@ -224,7 +254,7 @@ const Index = () => {
         {/* Transactions List */}
         <div className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
           <TransactionsList 
-            transactions={transactions || []}
+            transactions={convertedTransactions}
             onDeleteTransaction={() => {}}
           />
         </div>
@@ -274,7 +304,7 @@ const Index = () => {
         open={showSalaryModal}
         onOpenChange={setShowSalaryModal}
         onSetSalary={handleSetSalary}
-        currentSalary={salary}
+        currentSalary={convertedSalary}
       />
     </div>
   );

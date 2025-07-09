@@ -8,7 +8,7 @@ import ViewDayModal from '@/components/calendar/ViewDayModal';
 import LoadingScreen from '@/components/LoadingScreen';
 import { CalendarItem } from '@/types/calendar';
 import { useCalendarData } from '@/hooks/useCalendarData';
-import { useCreateTransaction, useDeleteTransaction, useCreateSavingsGoal } from '@/hooks/useFinancialData';
+import { useCreateTransaction, useDeleteTransaction } from '@/hooks/useFinancialData';
 import { useToast } from '@/hooks/use-toast';
 
 const Calendar = () => {
@@ -88,6 +88,30 @@ const Calendar = () => {
     }
   };
 
+  // Convert CalendarTransactions to CalendarItems for component compatibility
+  const convertedCalendarItems: CalendarItem[] = calendarItems.map(item => ({
+    id: item.id,
+    type: item.type as 'income' | 'expense' | 'savings',
+    title: item.title,
+    amount: item.amount,
+    date: item.date,
+    category: item.category,
+    description: item.description,
+  }));
+
+  const convertedGetItemsForDate = (date: Date): CalendarItem[] => {
+    const items = getItemsForDate(date);
+    return items.map(item => ({
+      id: item.id,
+      type: item.type as 'income' | 'expense' | 'savings',
+      title: item.title,
+      amount: item.amount,
+      date: item.date,
+      category: item.category,
+      description: item.description,
+    }));
+  };
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -106,9 +130,9 @@ const Calendar = () => {
           
           <CalendarView
             currentDate={currentDate}
-            items={calendarItems}
+            items={convertedCalendarItems}
             onDateClick={handleDateClick}
-            getItemsForDate={getItemsForDate}
+            getItemsForDate={convertedGetItemsForDate}
           />
         </div>
       </main>
@@ -124,7 +148,7 @@ const Calendar = () => {
         open={showViewModal}
         onOpenChange={setShowViewModal}
         selectedDate={selectedDate}
-        items={selectedDate ? getItemsForDate(selectedDate) : []}
+        items={selectedDate ? convertedGetItemsForDate(selectedDate) : []}
         onDeleteItem={handleDeleteItem}
         onAddNew={() => {
           setShowViewModal(false);
