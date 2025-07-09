@@ -23,13 +23,18 @@ const Login = () => {
   // Get the correct redirect URL based on environment
   const getRedirectUrl = () => {
     if (typeof window !== 'undefined') {
-      // In production, use the production URL
-      if (window.location.hostname === 'safespender.lovable.app') {
+      // Always use production URL for production and preview environments
+      if (window.location.hostname === 'safespender.lovable.app' || 
+          window.location.hostname.includes('lovable.app') ||
+          window.location.protocol === 'https:') {
         return 'https://safespender.lovable.app/';
       }
-      // For local development, use localhost
-      return `${window.location.origin}/`;
+      // Only use localhost for local development
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return `${window.location.origin}/`;
+      }
     }
+    // Default to production URL
     return 'https://safespender.lovable.app/';
   };
 
