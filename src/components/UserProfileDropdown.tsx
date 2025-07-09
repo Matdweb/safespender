@@ -5,39 +5,32 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { User, LogOut, PlayCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { User, Settings, LogOut } from 'lucide-react';
+import { useFeatureTour } from '@/hooks/useFeatureTour';
 
 const UserProfileDropdown = () => {
   const { user, logout } = useAuth();
-  const { toast } = useToast();
+  const { startTour } = useFeatureTour();
 
   const handleLogout = async () => {
-    await logout();
-    toast({
-      title: "Signed out",
-      description: "You've been successfully signed out",
-    });
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
-  const handleAccountClick = () => {
-    toast({
-      title: "Coming Soon!",
-      description: "Account settings will be available in the next update",
-    });
+  const handleStartTour = () => {
+    startTour();
   };
 
-  const handleSettingsClick = () => {
-    toast({
-      title: "Coming Soon!",
-      description: "Settings page will be available in the next update",
-    });
+  const getInitials = (email: string) => {
+    return email.split('@')[0].substring(0, 2).toUpperCase();
   };
 
   if (!user) return null;
@@ -45,47 +38,30 @@ const UserProfileDropdown = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative h-10 w-10 rounded-full hover-lift">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {user.email?.charAt(0).toUpperCase() || 'U'}
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+              {getInitials(user.email || 'U')}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        className="w-56 bg-card/95 backdrop-blur-sm border-border/50 shadow-lg" 
-        align="end" 
-        forceMount
-      >
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.email?.split('@')[0] || 'User'}</p>
-            <p className="text-xs leading-none text-muted-foreground">
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <div className="flex items-center justify-start gap-2 p-2">
+          <div className="flex flex-col space-y-1 leading-none">
+            <p className="font-medium text-sm">{user.user_metadata?.full_name || 'User'}</p>
+            <p className="w-[200px] truncate text-xs text-muted-foreground">
               {user.email}
             </p>
           </div>
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleAccountClick}
-          className="cursor-pointer hover:bg-accent/50 transition-colors"
-        >
-          <User className="mr-2 h-4 w-4" />
-          <span>My Account</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={handleSettingsClick}
-          className="cursor-pointer hover:bg-accent/50 transition-colors"
-        >
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+        <DropdownMenuItem onClick={handleStartTour} className="cursor-pointer">
+          <PlayCircle className="mr-2 h-4 w-4" />
+          <span>Feature Tour</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleLogout}
-          className="cursor-pointer hover:bg-destructive/10 focus:bg-destructive/10 text-destructive transition-colors"
-        >
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

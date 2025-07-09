@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Settings, Plus, X } from 'lucide-react';
-import { useFinancial } from '@/contexts/FinancialContext';
+import { useCreateSalaryConfiguration, useUpdateSalaryConfiguration, useSalaryConfiguration } from '@/hooks/useFinancialData';
+import { toast } from 'sonner';
 
 interface QuarterlyAmount {
   quarter: string;
@@ -16,33 +18,47 @@ interface QuarterlyAmount {
 interface SetSalaryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSetSalary: (salary: {
+  onSetSalary?: (salary: {
     frequency: 'weekly' | 'biweekly' | 'monthly' | 'yearly';
     daysOfMonth: number[];
     quarterlyAmounts: { quarter: string; amount: number }[];
   }) => void;
-  currentSalary?: {
-    frequency: 'weekly' | 'biweekly' | 'monthly' | 'yearly';
-    daysOfMonth: number[];
-    quarterlyAmounts: { quarter: string; amount: number }[];
-  } | null;
 }
 
-const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetSalaryModalProps) => {
-  const { setStartDate, startDate } = useFinancial();
-  const [frequency, setFrequency] = useState(currentSalary?.frequency || 'biweekly');
-  const [payDays, setPayDays] = useState<string[]>(
-    currentSalary?.daysOfMonth?.map(d => d.toString()) || ['15', '30']
-  );
-  const [quarterlyAmounts, setQuarterlyAmounts] = useState<QuarterlyAmount[]>(
-    currentSalary?.quarterlyAmounts?.map(q => ({ quarter: q.quarter, amount: q.amount.toString() })) || [
-      { quarter: 'Q1', amount: '' },
-      { quarter: 'Q2', amount: '' },
-      { quarter: 'Q3', amount: '' },
-      { quarter: 'Q4', amount: '' }
-    ]
-  );
+const SetSalaryModal = ({ open, onOpenChange, onSetSalary }: SetSalaryModalProps) => {
+  const { data: currentSalary, isLoading: isLoadingSalary } = useSalaryConfiguration();
+  const createSalaryMutation = useCreateSalaryConfiguration();
+  const updateSalaryMutation = useUpdateSalaryConfiguration();
+  
+  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly' | 'yearly'>('biweekly');
+  const [payDays, setPayDays] = useState<string[]>(['15', '30']);
+  const [quarterlyAmounts, setQuarterlyAmounts] = useState<QuarterlyAmount[]>([
+    { quarter: 'Q1', amount: '' },
+    { quarter: 'Q2', amount: '' },
+    { quarter: 'Q3', amount: '' },
+    { quarter: 'Q4', amount: '' }
+  ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Initialize form with current salary data
+  useEffect(() => {
+    if (currentSalary) {
+      setFrequency(currentSalary.frequency as 'weekly' | 'biweekly' | 'monthly' | 'yearly');
+      setPayDays(currentSalary.days_of_month?.map(d => d.toString()) || ['15']);
+      
+      // Handle quarterly amounts - they come as JSONB from database
+      if (currentSalary.quarterly_amounts) {
+        const amounts = Array.isArray(currentSalary.quarterly_amounts) 
+          ? currentSalary.quarterly_amounts 
+          : [];
+        
+        setQuarterlyAmounts(amounts.map((q: any) => ({
+          quarter: q.quarter || 'Q1',
+          amount: q.amount?.toString() || ''
+        })));
+      }
+    }
+  }, [currentSalary]);
 
   const addPayDay = () => {
     const maxDays = frequency === 'weekly' ? 4 : frequency === 'biweekly' ? 2 : 3;
@@ -108,25 +124,37 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validate()) {
-      // If this is the first time setting salary and no start date exists, set it to today
-      if (!currentSalary && !startDate) {
-        const today = new Date().toISOString().split('T')[0];
-        setStartDate(today);
-      }
+    if (!validate()) return;
 
-      onSetSalary({
-        frequency,
-        daysOfMonth: payDays.map(d => parseInt(d)).filter(d => !isNaN(d)),
-        quarterlyAmounts: quarterlyAmounts.map(q => ({
-          quarter: q.quarter,
-          amount: parseFloat(q.amount)
-        }))
-      });
+    const salaryData = {
+      frequency,
+      days_of_month: payDays.map(d => parseInt(d)).filter(d => !isNaN(d)),
+      quarterly_amounts: quarterlyAmounts.map(q => ({
+        quarter: q.quarter,
+        amount: parseFloat(q.amount)
+      }))
+    };
+
+    try {
+      if (currentSalary) {
+        await updateSalaryMutation.mutateAsync(salaryData);
+        toast.success('Salary configuration updated successfully!');
+      } else {
+        await createSalaryMutation.mutateAsync(salaryData);
+        toast.success('Salary configuration created successfully!');
+      }
+      
+      if (onSetSalary) {
+        onSetSalary(salaryData);
+      }
+      
       onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving salary:', error);
+      toast.error('Failed to save salary configuration');
     }
   };
 
@@ -147,55 +175,54 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
     switch (frequency) {
       case 'biweekly':
         setQuarterlyAmounts([
-          { quarter: 'First Paycheck', amount: '' },
-          { quarter: 'Second Paycheck', amount: '' }
+          { quarter: 'First Paycheck', amount: quarterlyAmounts[0]?.amount || '' },
+          { quarter: 'Second Paycheck', amount: quarterlyAmounts[1]?.amount || '' }
         ]);
         break;
       case 'monthly':
         setQuarterlyAmounts([
-          { quarter: 'Monthly Pay', amount: '' }
+          { quarter: 'Monthly Pay', amount: quarterlyAmounts[0]?.amount || '' }
         ]);
         break;
       case 'yearly':
         setQuarterlyAmounts([
-          { quarter: 'Annual Salary', amount: '' }
+          { quarter: 'Annual Salary', amount: quarterlyAmounts[0]?.amount || '' }
         ]);
         break;
       case 'weekly':
         setQuarterlyAmounts([
-          { quarter: 'Weekly Pay', amount: '' }
+          { quarter: 'Weekly Pay', amount: quarterlyAmounts[0]?.amount || '' }
         ]);
         break;
       default:
         setQuarterlyAmounts([
-          { quarter: 'Pay Amount', amount: '' }
+          { quarter: 'Pay Amount', amount: quarterlyAmounts[0]?.amount || '' }
         ]);
         break;
     }
 
-    // Dynamically update payDays based on frequency
-    switch (frequency) {
-      case 'weekly':
-        // For weekly, default to Fridays (5th day of week)
-        setPayDays(['5']);
-        break;
-      case 'biweekly':
-        // For biweekly, default to 15th and 30th
-        setPayDays(['15', '30']);
-        break;
-      case 'monthly':
-        // For monthly, default to 15th
-        setPayDays(['15']);
-        break;
-      case 'yearly':
-        // For yearly, default to 1st (start of year)
-        setPayDays(['1']);
-        break;
-      default:
-        setPayDays(['15']);
+    // Dynamically update payDays based on frequency only if no current salary
+    if (!currentSalary) {
+      switch (frequency) {
+        case 'weekly':
+          setPayDays(['5']);
+          break;
+        case 'biweekly':
+          setPayDays(['15', '30']);
+          break;
+        case 'monthly':
+          setPayDays(['15']);
+          break;
+        case 'yearly':
+          setPayDays(['1']);
+          break;
+        default:
+          setPayDays(['15']);
+      }
     }
-  }, [frequency]);
+  }, [frequency, currentSalary]);
 
+  const isLoading = createSalaryMutation.isPending || updateSalaryMutation.isPending || isLoadingSalary;
 
   return (
     <Dialog open={open} onOpenChange={(open) => {
@@ -208,7 +235,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
               <Settings className="w-4 h-4 text-primary" />
             </div>
-            💼 Set Salary Configuration
+            💼 {currentSalary ? 'Update' : 'Set'} Salary Configuration
           </DialogTitle>
         </DialogHeader>
 
@@ -268,10 +295,7 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
                     max={frequency === 'weekly' ? '7' : frequency === 'yearly' ? '365' : '31'}
                     className={errors[`payDay-${index}`] ? 'border-destructive' : ''}
                   />
-                  {((frequency === 'weekly' && payDays.length > 1) ||
-                    (frequency === 'biweekly' && payDays.length > 1) ||
-                    (frequency === 'monthly' && payDays.length > 1) ||
-                    (frequency === 'yearly' && payDays.length > 1)) && (
+                  {payDays.length > 1 && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -336,8 +360,8 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary, currentSalary }: SetS
             <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
-              {currentSalary ? 'Update' : 'Set'} Salary
+            <Button type="submit" className="flex-1" disabled={isLoading}>
+              {isLoading ? 'Saving...' : currentSalary ? 'Update' : 'Set'} Salary
             </Button>
           </div>
         </form>

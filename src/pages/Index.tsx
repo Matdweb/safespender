@@ -13,7 +13,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import TourAutoStarter from '@/components/tour/TourAutoStarter';
 import { useToast } from '@/hooks/use-toast';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
-import { useCreateTransaction, useCreateSavingsGoal, useUpdateSalaryConfiguration, useCreateSalaryConfiguration } from '@/hooks/useFinancialData';
+import { useCreateTransaction, useCreateSavingsGoal } from '@/hooks/useFinancialData';
 
 interface Transaction {
   id: string;
@@ -48,28 +48,32 @@ const Index = () => {
 
   const createTransactionMutation = useCreateTransaction();
   const createSavingsGoalMutation = useCreateSavingsGoal();
-  const updateSalaryMutation = useUpdateSalaryConfiguration();
-  const createSalaryMutation = useCreateSalaryConfiguration();
 
-  // Generate upcoming events from salary and goals
+  // Generate upcoming events from salary and goals only if salary exists
   const upcomingEvents = React.useMemo(() => {
     if (!transactions || !goals) return [];
     
+    const events = [];
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-    const salaryTransactions = generateSalaryTransactions(now, nextMonth);
     
-    return [
-      // Add salary transactions as upcoming events
-      ...salaryTransactions.slice(0, 3).map(t => ({
-        id: t.id,
-        type: t.type as 'income' | 'expense',
-        title: t.description,
-        amount: t.amount,
-        date: t.date,
-        recurring: true
-      })),
-      // Add future transactions
+    // Only generate salary transactions if salary data exists
+    if (salary && salary.quarterly_amounts && Array.isArray(salary.quarterly_amounts)) {
+      const salaryTransactions = generateSalaryTransactions(now, nextMonth);
+      events.push(
+        ...salaryTransactions.slice(0, 3).map(t => ({
+          id: t.id,
+          type: t.type as 'income' | 'expense',
+          title: t.description,
+          amount: t.amount,
+          date: t.date,
+          recurring: true
+        }))
+      );
+    }
+    
+    // Add future transactions
+    events.push(
       ...transactions
         .filter(t => new Date(t.date) > now)
         .slice(0, 3)
@@ -81,8 +85,10 @@ const Index = () => {
           date: t.date,
           recurring: false
         }))
-    ];
-  }, [transactions, goals, generateSalaryTransactions]);
+    );
+    
+    return events;
+  }, [transactions, goals, generateSalaryTransactions, salary]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -165,25 +171,11 @@ const Index = () => {
     }
   };
 
-  const handleSetSalary = async (salaryData: any) => {
-    try {
-      if (salary) {
-        await updateSalaryMutation.mutateAsync(salaryData);
-      } else {
-        await createSalaryMutation.mutateAsync(salaryData);
-      }
-      
-      toast({
-        title: "Salary Configuration Updated!",
-        description: "Your salary schedule has been saved",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save salary configuration",
-        variant: "destructive"
-      });
-    }
+  const handleSetSalary = () => {
+    toast({
+      title: "Salary Modal",
+      description: "Opening salary configuration modal",
+    });
   };
 
   // Convert database transactions to component format
@@ -196,15 +188,6 @@ const Index = () => {
     category: t.category || undefined,
     created_at: t.created_at
   })) : [];
-
-  // Convert salary configuration for component compatibility
-  const convertedSalary = salary ? {
-    frequency: salary.frequency as 'weekly' | 'biweekly' | 'monthly' | 'yearly',
-    daysOfMonth: salary.days_of_month,
-    quarterlyAmounts: Array.isArray(salary.quarterly_amounts) 
-      ? salary.quarterly_amounts as { quarter: string; amount: number; }[]
-      : []
-  } : null;
 
   useEffect(() => {
     document.body.classList.add('animate-fade-in');
@@ -304,8 +287,6 @@ const Index = () => {
       <SetSalaryModal
         open={showSalaryModal}
         onOpenChange={setShowSalaryModal}
-        onSetSalary={handleSetSalary}
-        currentSalary={convertedSalary}
       />
     </div>
   );

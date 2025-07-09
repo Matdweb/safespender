@@ -72,38 +72,37 @@ export const useFinancialDashboard = () => {
         .filter(t => t.type === 'expense' && new Date(t.date + 'T00:00:00') > today)
         .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
 
-      // Calculate next income amount and date
+      // Calculate next income amount and date only if salary exists
       let nextIncomeAmount = 0;
       let nextIncomeDate: Date | null = null;
 
-      if (salary) {
+      if (salary && salary.quarterly_amounts && Array.isArray(salary.quarterly_amounts)) {
         // Calculate average quarterly amount
-        const quarterlyAmounts = Array.isArray(salary.quarterly_amounts) 
-          ? salary.quarterly_amounts 
-          : (salary.quarterly_amounts as any)?.map?.((q: any) => q.amount) || [];
-        
+        const quarterlyAmounts = salary.quarterly_amounts.map((q: any) => q.amount || 0);
         const totalQuarterly = quarterlyAmounts.reduce((sum: number, amount: number) => sum + amount, 0);
         const avgQuarterly = quarterlyAmounts.length > 0 ? totalQuarterly / quarterlyAmounts.length : 0;
 
-        // Convert to payment frequency
-        switch (salary.frequency) {
-          case 'weekly':
-            nextIncomeAmount = avgQuarterly / 13;
-            nextIncomeDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-            break;
-          case 'biweekly':
-            nextIncomeAmount = avgQuarterly / 6.5;
-            nextIncomeDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-            break;
-          case 'monthly':
-            nextIncomeAmount = avgQuarterly / 3;
-            const nextSalaryMonth = new Date(today.getFullYear(), today.getMonth() + 1, salary.days_of_month[0] || 1);
-            nextIncomeDate = nextSalaryMonth;
-            break;
-          case 'yearly':
-            nextIncomeAmount = avgQuarterly * 4;
-            nextIncomeDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-            break;
+        if (avgQuarterly > 0) {
+          // Convert to payment frequency
+          switch (salary.frequency) {
+            case 'weekly':
+              nextIncomeAmount = avgQuarterly / 13;
+              nextIncomeDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+              break;
+            case 'biweekly':
+              nextIncomeAmount = avgQuarterly / 6.5;
+              nextIncomeDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
+              break;
+            case 'monthly':
+              nextIncomeAmount = avgQuarterly / 3;
+              const nextSalaryMonth = new Date(today.getFullYear(), today.getMonth() + 1, salary.days_of_month[0] || 1);
+              nextIncomeDate = nextSalaryMonth;
+              break;
+            case 'yearly':
+              nextIncomeAmount = avgQuarterly * 4;
+              nextIncomeDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+              break;
+          }
         }
       }
 
@@ -128,17 +127,18 @@ export const useFinancialDashboard = () => {
   // Generate salary transactions for a date range
   const generateSalaryTransactions = useMemo(() => {
     return (startDate: Date, endDate: Date) => {
-      if (!salary) return [];
+      if (!salary || !salary.quarterly_amounts || !Array.isArray(salary.quarterly_amounts)) {
+        return [];
+      }
 
       const transactions: any[] = [];
       
       // Calculate average quarterly amount
-      const quarterlyAmounts = Array.isArray(salary.quarterly_amounts) 
-        ? salary.quarterly_amounts 
-        : (salary.quarterly_amounts as any)?.map?.((q: any) => q.amount) || [];
-      
+      const quarterlyAmounts = salary.quarterly_amounts.map((q: any) => q.amount || 0);
       const totalQuarterly = quarterlyAmounts.reduce((sum: number, amount: number) => sum + amount, 0);
       const avgQuarterly = quarterlyAmounts.length > 0 ? totalQuarterly / quarterlyAmounts.length : 0;
+
+      if (avgQuarterly === 0) return [];
 
       let paymentAmount = 0;
       switch (salary.frequency) {
@@ -162,12 +162,14 @@ export const useFinancialDashboard = () => {
       const generateSalaryDates = () => {
         const dates: Date[] = [];
         const current = new Date(startDate);
+        // Move one day earlier to show transactions before they happen
+        current.setDate(current.getDate() - 1);
 
         while (current <= endDate) {
           if (salary.frequency === 'monthly' && salary.days_of_month?.length > 0) {
             // For monthly, use specified days of month
             salary.days_of_month.forEach(day => {
-              const salaryDate = new Date(current.getFullYear(), current.getMonth(), day);
+              const salaryDate = new Date(current.getFullYear(), current.getMonth(), day - 1);
               if (salaryDate >= startDate && salaryDate <= endDate) {
                 dates.push(new Date(salaryDate));
               }
@@ -176,7 +178,7 @@ export const useFinancialDashboard = () => {
           } else if (salary.frequency === 'biweekly' && salary.days_of_month?.length >= 2) {
             // For biweekly, use two days per month
             salary.days_of_month.slice(0, 2).forEach(day => {
-              const salaryDate = new Date(current.getFullYear(), current.getMonth(), day);
+              const salaryDate = new Date(current.getFullYear(), current.getMonth(), day - 1);
               if (salaryDate >= startDate && salaryDate <= endDate) {
                 dates.push(new Date(salaryDate));
               }

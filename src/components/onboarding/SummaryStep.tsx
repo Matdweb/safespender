@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useFinancialData';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { toast } from 'sonner';
+import { useFeatureTour } from '@/hooks/useFeatureTour';
 
 interface Props {
   data: OnboardingData;
@@ -21,12 +22,13 @@ interface Props {
 
 const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
   const { user } = useAuth();
+  const { startTour } = useFeatureTour();
   const createFinancialProfile = useCreateFinancialProfile();
   const createSalaryConfiguration = useCreateSalaryConfiguration();
   const createExpense = useCreateExpense();
   const createSavingsGoal = useCreateSavingsGoal();
 
-  const handleComplete = async () => {
+  const handleComplete = async (startTourAfter = false) => {
     if (!user) {
       toast.error('You must be logged in to complete onboarding');
       return;
@@ -86,7 +88,16 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
 
       console.log('✅ Onboarding completed successfully');
       toast.success('Welcome to SafeSpender! Your account has been set up.');
+      
+      // Complete onboarding first
       onNext();
+      
+      // Start tour if requested
+      if (startTourAfter) {
+        setTimeout(() => {
+          startTour();
+        }, 500);
+      }
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);
       toast.error('Failed to complete onboarding. Please try again.');
@@ -150,12 +161,21 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
         </div>
       )}
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={onNext} disabled={isLoading}>
-          Complete Onboarding
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Button 
+          variant="outline" 
+          onClick={() => handleComplete(false)} 
+          disabled={isLoading}
+          className="flex-1"
+        >
+          {isLoading ? 'Setting up...' : 'Confirm & Skip Tour'}
         </Button>
-        <Button onClick={handleComplete} disabled={isLoading}>
-          {isLoading ? 'Setting up...' : 'Confirm'}
+        <Button 
+          onClick={() => handleComplete(true)} 
+          disabled={isLoading}
+          className="flex-1"
+        >
+          {isLoading ? 'Setting up...' : 'Confirm & Start Tour'}
         </Button>
       </div>
     </div>
