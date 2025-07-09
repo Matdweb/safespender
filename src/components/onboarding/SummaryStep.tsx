@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OnboardingStepProps } from './types';
 import { useFinancial } from '@/contexts/FinancialContext';
@@ -20,8 +21,9 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
     const today = new Date().toISOString().split('T')[0];
     setStartDate(today);
     
-    // Set currency
+    // Set currency FIRST - this is critical for the base currency
     if (data.currency) {
+      console.log('💰 Setting base currency:', data.currency);
       setCurrency(data.currency);
     }
 
@@ -70,7 +72,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
 
       {data.currency && (
         <div className="border rounded-md p-4">
-          <strong>Currency:</strong> {data.currency}
+          <strong>Base Currency:</strong> {data.currency}
         </div>
       )}
 

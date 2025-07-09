@@ -7,6 +7,7 @@ import { TrendingUp, AlertTriangle, Clock, DollarSign, Globe } from 'lucide-reac
 import { useFinancial } from '@/contexts/FinancialContext';
 import CurrencyDisplay from './CurrencyDisplay';
 import EnhancedBorrowModal from './EnhancedBorrowModal';
+import { formatCurrency } from '@/utils/currencyUtils';
 
 interface FreeToSpendCardProps {
   amount: number;
@@ -28,15 +29,13 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
   const isVeryLow = amount < 50;
 
   const currencies = ['USD', 'EUR', 'CRC', 'GBP', 'CAD'];
-  const symbols = { USD: '$', EUR: '€', CRC: '₡', GBP: '£', CAD: 'C$' };
 
   const convertAmount = (value: number) =>
     displayCurrency === currency ? value : convertCurrency(value, displayCurrency);
 
-  const formatCurrency = (value: number) => {
+  const formatAmount = (value: number) => {
     const converted = convertAmount(value);
-    const symbol = symbols[displayCurrency as keyof typeof symbols] || '$';
-    return `${symbol}${converted.toLocaleString()}`;
+    return formatCurrency(converted, displayCurrency);
   };
 
   return (
@@ -63,7 +62,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
               </div>
             </div>
 
-            {/* Desktop currency selector - inline next to amount title */}
+            {/* Mobile currency selector */}
             <div className="flex sm:hidden items-center gap-3 mb-2">
               <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
                 <SelectTrigger className="w-20 h-8 bg-white/10 text-white border-white/20 text-xs">
@@ -76,10 +75,10 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+                </Select>
             </div>
             <div className="text-4xl mb-1 text-white font-bold">
-              {formatCurrency(amount)}
+              {formatAmount(amount)}
             </div>
             {isVeryLow && (
               <div className="flex items-center gap-2 text-orange-200">
@@ -96,15 +95,15 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         <div className="space-y-3 text-sm text-white/80">
           <div className="flex justify-between">
             <span>Current Balance</span>
-            <span className="font-medium">{formatCurrency(balance)}</span>
+            <span className="font-medium">{formatAmount(balance)}</span>
           </div>
           <div className="flex justify-between">
             <span>Reserved for Bills</span>
-            <span className="font-medium">-{formatCurrency(reservedExpenses)}</span>
+            <span className="font-medium">-{formatAmount(reservedExpenses)}</span>
           </div>
           <div className="flex justify-between">
             <span>Assigned Savings</span>
-            <span className="font-medium">-{formatCurrency(assignedSavings)}</span>
+            <span className="font-medium">-{formatAmount(assignedSavings)}</span>
           </div>
 
           {pendingExpenses > 0 && (
@@ -113,20 +112,20 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
                 <Clock className="w-3 h-3" />
                 Pending Expenses
               </span>
-              <span className="font-medium">{formatCurrency(pendingExpenses)}</span>
+              <span className="font-medium">{formatAmount(pendingExpenses)}</span>
             </div>
           )}
 
           {totalBorrowed > 0 && (
             <div className="flex justify-between text-blue-200">
               <span>Previously Borrowed</span>
-              <span className="font-medium">+{formatCurrency(totalBorrowed)}</span>
+              <span className="font-medium">+{formatAmount(totalBorrowed)}</span>
             </div>
           )}
 
           <div className="border-t border-white/20 pt-3 flex justify-between font-semibold text-white">
             <span>Available to Spend</span>
-            <span>{formatCurrency(amount)}</span>
+            <span>{formatAmount(amount)}</span>
           </div>
         </div>
 

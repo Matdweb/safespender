@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DollarSign } from 'lucide-react';
+import { useFinancial } from '@/contexts/FinancialContext';
+import { getCurrencySymbol } from '@/utils/currencyUtils';
 
 interface AddIncomeDialogProps {
   open: boolean;
@@ -19,9 +21,12 @@ interface AddIncomeDialogProps {
 }
 
 const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogProps) => {
+  const { currency } = useFinancial();
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
+
+  const currencySymbol = getCurrencySymbol(currency);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,9 +60,9 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="amount">Amount ({currency})</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500">$</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500">{currencySymbol}</span>
               <Input
                 id="amount"
                 type="number"

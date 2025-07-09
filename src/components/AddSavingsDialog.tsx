@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { Goal } from '@/contexts/FinancialContext';
+import { getCurrencySymbol, formatCurrency } from '@/utils/currencyUtils';
 
 interface AddSavingsDialogProps {
   open: boolean;
@@ -16,12 +17,13 @@ interface AddSavingsDialogProps {
 }
 
 const AddSavingsDialog = ({ open, onOpenChange, onAddSavings, selectedDate }: AddSavingsDialogProps) => {
-  const { goals, getFreeToSpend } = useFinancial();
+  const { goals, getFreeToSpend, currency } = useFinancial();
   const [amount, setAmount] = useState('');
   const [selectedGoalId, setSelectedGoalId] = useState('');
   const [description, setDescription] = useState('');
 
   const availableAmount = getFreeToSpend();
+  const currencySymbol = getCurrencySymbol(currency);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,19 +79,23 @@ const AddSavingsDialog = ({ open, onOpenChange, onAddSavings, selectedDate }: Ad
           </div>
 
           <div>
-            <Label htmlFor="amount">Amount</Label>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min="0.01"
-              step="0.01"
-              required
-            />
+            <Label htmlFor="amount">Amount ({currency})</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500">{currencySymbol}</span>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="pl-8"
+                min="0.01"
+                step="0.01"
+                required
+              />
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Available: ${availableAmount.toLocaleString()}
+              Available: {formatCurrency(availableAmount, currency)}
             </p>
           </div>
 

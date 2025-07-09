@@ -6,6 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Target, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Goal } from '@/contexts/FinancialContext';
+import { useFinancial } from '@/contexts/FinancialContext';
+import { formatCurrency } from '@/utils/currencyUtils';
 
 interface SavingsGoalsProps {
   goals: Goal[];
@@ -13,6 +15,8 @@ interface SavingsGoalsProps {
 }
 
 const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
+  const { currency } = useFinancial();
+
   return (
     <Card className="p-6 card-border">
       <div className="flex items-center justify-between mb-4">
@@ -46,7 +50,7 @@ const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
                     <div>
                       <h4 className="font-medium text-sm">{goal.name}</h4>
                       <p className="text-xs text-subtle">
-                        ${goal.currentAmount.toLocaleString()} of ${goal.targetAmount.toLocaleString()}
+                        {formatCurrency(goal.currentAmount, currency)} of {formatCurrency(goal.targetAmount, currency)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -59,7 +63,7 @@ const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
                   <Progress value={progress} className="h-2" />
                   
                   <p className="text-xs text-subtle">
-                    ${remaining.toLocaleString()} remaining
+                    {formatCurrency(remaining, currency)} remaining
                   </p>
                 </div>
               );

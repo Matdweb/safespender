@@ -126,7 +126,7 @@ const getSalaryAmountForDate = (date: Date, salary: SalaryConfig): number => {
 export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [currency, setCurrency] = useState<string>('USD');
+  const [currency, setCurrencyState] = useState<string>('USD');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [salaryConfig, setSalaryConfig] = useState<SalaryConfig | null>(null);
   const [startDate, setStartDateState] = useState<string | null>(null);
@@ -134,6 +134,12 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   const setStartDate = (date: string) => {
     setStartDateState(date);
     localStorage.setItem('safespender-start-date', date);
+  };
+
+  const setCurrency = (newCurrency: string) => {
+    setCurrencyState(newCurrency);
+    localStorage.setItem('safespender-currency', newCurrency);
+    console.log(`Base currency updated to: ${newCurrency}`);
   };
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
@@ -526,6 +532,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
   useEffect(() => {
     const hasOnboarded = localStorage.getItem('safespender-onboarded');
     const savedStartDate = localStorage.getItem('safespender-start-date');
+    const savedCurrency = localStorage.getItem('safespender-currency');
     
     if (hasOnboarded) {
       setIsFirstTimeUser(false);
@@ -533,6 +540,11 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
     
     if (savedStartDate) {
       setStartDateState(savedStartDate);
+    }
+
+    if (savedCurrency) {
+      setCurrencyState(savedCurrency);
+      console.log(`Loaded base currency: ${savedCurrency}`);
     }
   }, []);
 
