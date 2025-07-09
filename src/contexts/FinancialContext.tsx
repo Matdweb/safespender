@@ -455,12 +455,17 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       .filter(t => t.type === 'savings' && new Date(t.date) >= appStartDate)
       .reduce((sum, t) => sum + t.amount, 0);
 
+    // Add back any savings withdrawals (negative expense transactions from savings)
+    const savingsWithdrawals = transactions
+      .filter(t => t.type === 'expense' && t.category === 'savings-withdrawal' && new Date(t.date) >= appStartDate)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0); // These are stored as negative, so we make them positive
+
     // Subtract total expenses that have been paid (from app start date onward)
     const totalExpensesPaid = transactions
-      .filter(t => t.type === 'expense' && new Date(t.date) >= appStartDate && new Date(t.date) <= today)
+      .filter(t => t.type === 'expense' && t.category !== 'savings-withdrawal' && new Date(t.date) >= appStartDate && new Date(t.date) <= today)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const freeAmount = totalIncomeReceived - totalExpensesPaid - upcomingExpenses - upcomingSavings + totalBorrowed - totalSavingsContributions;
+    const freeAmount = totalIncomeReceived - totalExpensesPaid - upcomingExpenses - upcomingSavings + totalBorrowed - totalSavingsContributions + savingsWithdrawals;
     
     console.log(`Free to spend calculation (from ${appStartDate.toDateString()}):
       Total income received: ${totalIncomeReceived}
@@ -469,6 +474,7 @@ export const FinancialProvider = ({ children }: FinancialProviderProps) => {
       Upcoming savings: ${upcomingSavings}
       Total borrowed: ${totalBorrowed}
       Total savings contributions: ${totalSavingsContributions}
+      Savings withdrawals: ${savingsWithdrawals}
       Free amount: ${freeAmount}`);
     
     return Math.max(0, freeAmount);

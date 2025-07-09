@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TrendingUp, AlertTriangle, Clock, DollarSign, Globe } from 'lucide-react';
 import { useFinancial } from '@/contexts/FinancialContext';
 import CurrencyDisplay from './CurrencyDisplay';
-import EmergencyBorrowModal from './EmergencyBorrowModal';
+import EnhancedBorrowModal from './EnhancedBorrowModal';
 
 interface FreeToSpendCardProps {
   amount: number;
@@ -142,7 +142,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         </div>
       </Card>
 
-      <EmergencyBorrowModal
+      <EnhancedBorrowModal
         open={showBorrowModal}
         onOpenChange={setShowBorrowModal}
       />

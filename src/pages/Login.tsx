@@ -8,12 +8,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/Logo';
 import { Eye, EyeOff, Mail, Lock, Chrome } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { login, signUp, isLoading } = useAuth();
   const { toast } = useToast();
 
@@ -78,11 +80,32 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    toast({
-      title: "Coming Soon!",
-      description: "Google sign-in will be available in the next update",
-    });
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) {
+        toast({
+          title: "Google sign-in failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Google sign-in failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
@@ -112,6 +135,28 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Google Sign In - at the top */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full transition-all duration-200 hover-lift"
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleLoading}
+            >
+              <Chrome className="mr-2 h-4 w-4" />
+              {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
+            </Button>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
+              </div>
+            </div>
+
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -230,28 +275,6 @@ const Login = () => {
                 </form>
               </TabsContent>
             </Tabs>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-
-            {/* Google Sign In */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full transition-all duration-200 hover-lift"
-              onClick={handleGoogleSignIn}
-            >
-              <Chrome className="mr-2 h-4 w-4" />
-              Sign in with Google
-            </Button>
-
           </CardContent>
         </Card>
         <Card className="animate-scale-in bg-card/80 backdrop-blur-sm border-border/50 shadow-lg mt-4">
