@@ -9,8 +9,10 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useFinancial } from "@/contexts/FinancialContext";
+import { useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 import Calendar from "./pages/Calendar";
 import Goals from "./pages/Goals";
 import NotFound from "./pages/NotFound";
@@ -39,49 +41,69 @@ const OnboardingChecker = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppRoutes = () => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          user ? (
+            <ProtectedRoute>
+              <FinancialProvider>
+                <OnboardingChecker>
+                  <Index />
+                </OnboardingChecker>
+              </FinancialProvider>
+            </ProtectedRoute>
+          ) : (
+            <Landing />
+          )
+        } 
+      />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route 
+        path="/calendar" 
+        element={
+          <ProtectedRoute>
+            <FinancialProvider>
+              <OnboardingChecker>
+                <Calendar />
+              </OnboardingChecker>
+            </FinancialProvider>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/goals" 
+        element={
+          <ProtectedRoute>
+            <FinancialProvider>
+              <OnboardingChecker>
+                <Goals />
+              </OnboardingChecker>
+            </FinancialProvider>
+          </ProtectedRoute>
+        } 
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <FinancialProvider>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route 
-                  path="/" 
-                  element={
-                    <ProtectedRoute>
-                      <OnboardingChecker>
-                        <Index />
-                      </OnboardingChecker>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/calendar" 
-                  element={
-                    <ProtectedRoute>
-                      <OnboardingChecker>
-                        <Calendar />
-                      </OnboardingChecker>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/goals" 
-                  element={
-                    <ProtectedRoute>
-                      <OnboardingChecker>
-                        <Goals />
-                      </OnboardingChecker>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Toaster />
-            </FinancialProvider>
+            <AppRoutes />
+            <Toaster />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
