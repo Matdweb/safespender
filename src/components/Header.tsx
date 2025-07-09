@@ -16,14 +16,14 @@ interface HeaderProps {
 
 const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const { startTour, resetTour, hasSeenTour } = useFeatureTour();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -48,7 +48,7 @@ const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 hover-scale">
-            <Logo className="h-8 w-auto" />
+            <Logo />
           </Link>
 
           {/* Desktop Navigation */}
@@ -116,7 +116,7 @@ const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
 
                 {/* User Profile Dropdown */}
                 <div className="hidden md:block">
-                  <UserProfileDropdown onStartTour={handleStartTour} />
+                  <UserProfileDropdown />
                 </div>
 
                 {/* Mobile Menu Button */}

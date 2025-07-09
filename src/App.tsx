@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -40,23 +41,6 @@ const OnboardingChecker = ({ children }: { children: React.ReactNode }) => {
   }
 
   return <>{children}</>;
-};
-
-const TourStarter = () => {
-  const { startTour, hasSeenTour } = useFeatureTour();
-
-  useEffect(() => {
-    const shouldStartTour = localStorage.getItem('safespender-start-tour-after-onboarding');
-    if (shouldStartTour === 'true' && !hasSeenTour) {
-      localStorage.removeItem('safespender-start-tour-after-onboarding');
-      // Start tour after a brief delay to ensure page is loaded
-      setTimeout(() => {
-        startTour();
-      }, 1000);
-    }
-  }, [startTour, hasSeenTour]);
-
-  return null;
 };
 
 const AppRoutes = () => {
