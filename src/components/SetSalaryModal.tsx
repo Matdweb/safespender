@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -129,13 +128,16 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary }: SetSalaryModalProps
 
     if (!validate()) return;
 
+    const daysOfMonth = payDays.map(d => parseInt(d)).filter(d => !isNaN(d));
+    const quarterlyAmountsData = quarterlyAmounts.map(q => ({
+      quarter: q.quarter,
+      amount: parseFloat(q.amount)
+    }));
+
     const salaryData = {
       frequency,
-      days_of_month: payDays.map(d => parseInt(d)).filter(d => !isNaN(d)),
-      quarterly_amounts: quarterlyAmounts.map(q => ({
-        quarter: q.quarter,
-        amount: parseFloat(q.amount)
-      }))
+      days_of_month: daysOfMonth,
+      quarterly_amounts: quarterlyAmountsData
     };
 
     try {
@@ -148,7 +150,11 @@ const SetSalaryModal = ({ open, onOpenChange, onSetSalary }: SetSalaryModalProps
       }
       
       if (onSetSalary) {
-        onSetSalary(salaryData);
+        onSetSalary({
+          frequency,
+          daysOfMonth,
+          quarterlyAmounts: quarterlyAmountsData
+        });
       }
       
       onOpenChange(false);
