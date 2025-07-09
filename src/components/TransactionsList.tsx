@@ -1,18 +1,56 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, DollarSign, TrendingDown, ArrowUpCircle, PiggyBank } from 'lucide-react';
-import { Transaction } from '@/contexts/FinancialContext';
-import CurrencyDisplay from './CurrencyDisplay';
+import { useDeleteTransaction } from '@/hooks/useFinancialData';
+import { formatCurrency } from '@/utils/currencyUtils';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useToast } from '@/hooks/use-toast';
+
+interface Transaction {
+  id: string;
+  type: 'income' | 'expense' | 'savings';
+  amount: number | string;
+  description: string;
+  date: string;
+  category?: string;
+  created_at?: string;
+}
 
 interface TransactionsListProps {
   transactions: Transaction[];
-  onDeleteTransaction: (id: string) => void;
+  onDeleteTransaction?: (id: string) => void;
 }
 
-const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsListProps) => {
-  const recentTransactions = transactions.slice(0, 10);
+const TransactionsList = ({ transactions }: TransactionsListProps) => {
+  const { currency } = useFinancialDashboard();
+  const deleteTransactionMutation = useDeleteTransaction();
+  const { toast } = useToast();
+
+  // Sort transactions by date (most recent first)
+  const recentTransactions = React.useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 10);
+  }, [transactions]);
+
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await deleteTransactionMutation.mutateAsync(id);
+      toast({
+        title: "Transaction Deleted",
+        description: "Transaction has been removed",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction",
+        variant: "destructive"
+      });
+    }
+  };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -20,8 +58,6 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
         return <DollarSign className="w-4 h-4" />;
       case 'expense':
         return <TrendingDown className="w-4 h-4" />;
-      case 'borrow':
-        return <ArrowUpCircle className="w-4 h-4" />;
       case 'savings':
         return <PiggyBank className="w-4 h-4" />;
       default:
@@ -35,8 +71,6 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
         return 'bg-primary/10 text-primary';
       case 'expense':
         return 'bg-destructive/10 text-destructive';
-      case 'borrow':
-        return 'bg-blue-500/10 text-blue-600';
       case 'savings':
         return 'bg-blue-600/10 text-blue-600';
       default:
@@ -50,8 +84,6 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
         return 'text-primary';
       case 'expense':
         return 'text-destructive';
-      case 'borrow':
-        return 'text-blue-600';
       case 'savings':
         return 'text-blue-600';
       default:
@@ -92,16 +124,6 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
                   <div>
                     <p className="font-medium text-sm">
                       {transaction.description}
-                      {transaction.type === 'borrow' && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                          Advance
-                        </span>
-                      )}
-                      {transaction.type === 'savings' && transaction.isExtraContribution && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                          Extra
-                        </span>
-                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(transaction.date).toLocaleDateString('en-US', {
@@ -109,7 +131,6 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
                         day: 'numeric',
                         year: 'numeric'
                       })}
-                      {transaction.recurring && ' • Recurring'}
                       {transaction.category && ` • ${transaction.category}`}
                     </p>
                   </div>
@@ -118,13 +139,14 @@ const TransactionsList = ({ transactions, onDeleteTransaction }: TransactionsLis
                 <div className="flex items-center gap-2">
                   <span className={`font-semibold text-sm ${getAmountColor(transaction.type)}`}>
                     {transaction.type === 'expense' || transaction.type === 'savings' ? '-' : '+'}
-                    <CurrencyDisplay amount={transaction.amount} className="inline" />
+                    {formatCurrency(parseFloat(transaction.amount.toString()), currency)}
                   </span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onDeleteTransaction(transaction.id)}
+                    onClick={() => handleDeleteTransaction(transaction.id)}
                     className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                    disabled={deleteTransactionMutation.isPending}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>

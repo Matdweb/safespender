@@ -5,9 +5,16 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Target, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Goal } from '@/contexts/FinancialContext';
-import { useFinancial } from '@/contexts/FinancialContext';
 import { formatCurrency } from '@/utils/currencyUtils';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+
+interface Goal {
+  id: string;
+  name: string;
+  target_amount: number | string;
+  current_amount: number | string;
+  icon?: string;
+}
 
 interface SavingsGoalsProps {
   goals: Goal[];
@@ -15,7 +22,7 @@ interface SavingsGoalsProps {
 }
 
 const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
-  const { currency } = useFinancial();
+  const { currency } = useFinancialDashboard();
 
   return (
     <Card className="p-6 card-border">
@@ -41,16 +48,21 @@ const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
             </div>
           ) : (
             goals.map((goal) => {
-              const progress = (goal.currentAmount / goal.targetAmount) * 100;
-              const remaining = goal.targetAmount - goal.currentAmount;
+              const targetAmount = parseFloat(goal.target_amount.toString());
+              const currentAmount = parseFloat(goal.current_amount.toString());
+              const progress = (currentAmount / targetAmount) * 100;
+              const remaining = targetAmount - currentAmount;
               
               return (
                 <div key={goal.id} className="space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-medium text-sm">{goal.name}</h4>
+                      <h4 className="font-medium text-sm flex items-center gap-2">
+                        <span>{goal.icon || '💰'}</span>
+                        {goal.name}
+                      </h4>
                       <p className="text-xs text-subtle">
-                        {formatCurrency(goal.currentAmount, currency)} of {formatCurrency(goal.targetAmount, currency)}
+                        {formatCurrency(currentAmount, currency)} of {formatCurrency(targetAmount, currency)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -60,10 +72,10 @@ const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
                     </div>
                   </div>
                   
-                  <Progress value={progress} className="h-2" />
+                  <Progress value={Math.min(progress, 100)} className="h-2" />
                   
                   <p className="text-xs text-subtle">
-                    {formatCurrency(remaining, currency)} remaining
+                    {remaining > 0 ? formatCurrency(remaining, currency) + ' remaining' : 'Goal completed! 🎉'}
                   </p>
                 </div>
               );

@@ -3,11 +3,10 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, AlertTriangle, Clock, DollarSign, Globe } from 'lucide-react';
-import { useFinancial } from '@/contexts/FinancialContext';
-import CurrencyDisplay from './CurrencyDisplay';
-import EnhancedBorrowModal from './EnhancedBorrowModal';
+import { TrendingUp, AlertTriangle, Clock, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyUtils';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import EnhancedBorrowModal from './EnhancedBorrowModal';
 
 interface FreeToSpendCardProps {
   amount: number;
@@ -17,14 +16,14 @@ interface FreeToSpendCardProps {
 }
 
 const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }: FreeToSpendCardProps) => {
-  const { getPendingExpenses, transactions, currency, convertCurrency } = useFinancial();
+  const { currency, convertCurrency, pendingExpenses, transactions } = useFinancialDashboard();
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [displayCurrency, setDisplayCurrency] = useState(currency);
 
-  const pendingExpenses = getPendingExpenses();
   const totalBorrowed = transactions
-    .filter(t => t.type === 'borrow')
-    .reduce((sum, t) => sum + t.amount, 0);
+    ?.filter(t => t.type === 'income' && t.category === 'advance')
+    .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
+
   const isLow = amount < 100;
   const isVeryLow = amount < 50;
 

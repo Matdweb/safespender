@@ -1,12 +1,15 @@
+
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import CalendarView from '@/components/calendar/CalendarView';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import AddItemModal from '@/components/calendar/AddItemModal';
 import ViewDayModal from '@/components/calendar/ViewDayModal';
+import LoadingScreen from '@/components/LoadingScreen';
 import { CalendarItem } from '@/types/calendar';
-import { useFinancial } from '@/contexts/FinancialContext';
-import AddSavingsDialog from '@/components/AddSavingsDialog';
+import { useCalendarData } from '@/hooks/useCalendarData';
+import { useCreateTransaction, useDeleteTransaction, useCreateSavingsGoal } from '@/hooks/useFinancialData';
+import { useToast } from '@/hooks/use-toast';
 
 const Calendar = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -14,101 +17,11 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showAddSavingsModal, setShowAddSavingsModal] = useState(false);
 
-  const { 
-    transactions, 
-    goals,
-    addTransaction, 
-    deleteTransaction, 
-    generateSalaryTransactions,
-    addSavingsContribution
-  } = useFinancial();
-
-  // Convert transactions to calendar items
-  const calendarItems: CalendarItem[] = React.useMemo(() => {
-    console.log('Recalculating calendar items...');
-    
-    // Get calendar view range (3 months forward and 1 month back for context)
-    const startOfRange = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-    const endOfRange = new Date(currentDate.getFullYear(), currentDate.getMonth() + 3, 0);
-    
-    console.log(`Calendar range: ${startOfRange.toDateString()} to ${endOfRange.toDateString()}`);
-    
-    // Get manual transactions that fall within our view range
-    const manualTransactionsInRange = transactions
-      .filter(t => {
-        const transactionDate = new Date(t.date);
-        return transactionDate >= startOfRange && transactionDate <= endOfRange;
-      })
-      .map(t => ({
-        id: t.id,
-        type: t.type,
-        title: t.description,
-        amount: t.amount,
-        date: t.date,
-        category: t.category,
-        description: t.description,
-      }));
-
-    // Generate salary transactions for the view range
-    const salaryTransactions = generateSalaryTransactions(startOfRange, endOfRange);
-    
-    console.log(`Manual transactions in range: ${manualTransactionsInRange.length}`);
-    console.log(`Generated salary transactions: ${salaryTransactions.length}`);
-    
-    const salaryItems = salaryTransactions.map(t => ({
-      id: t.id,
-      type: t.type,
-      title: t.description,
-      amount: t.amount,
-      date: t.date,
-      category: t.category,
-      description: t.description,
-    }));
-
-    // Add savings contributions as calendar items
-    const savingsItems: CalendarItem[] = [];
-    goals.forEach(goal => {
-      if (goal.recurringContribution > 0) {
-        // Generate savings contributions for the view range
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
-        
-        // Generate for each month in the range
-        for (let monthOffset = -1; monthOffset <= 3; monthOffset++) {
-          const contributionDate = new Date(currentYear, currentMonth + monthOffset, 1);
-          
-          // Adjust based on contribution frequency
-          if (goal.contributionFrequency === 'monthly') {
-            contributionDate.setDate(1);
-          } else if (goal.contributionFrequency === 'biweekly') {
-            contributionDate.setDate(15);
-          } else if (goal.contributionFrequency === 'weekly') {
-            contributionDate.setDate(7);
-          }
-          
-          if (contributionDate >= startOfRange && contributionDate <= endOfRange) {
-            savingsItems.push({
-              id: `savings-${goal.id}-${contributionDate.getTime()}`,
-              type: 'savings',
-              title: `💰 ${goal.name} Savings`,
-              amount: goal.recurringContribution,
-              date: `${contributionDate.getFullYear()}-${String(contributionDate.getMonth() + 1).padStart(2, '0')}-${String(contributionDate.getDate()).padStart(2, '0')}`,
-              category: 'savings',
-              description: `Savings contribution to ${goal.name}`,
-            });
-          }
-        }
-      }
-    });
-
-    const allItems = [...manualTransactionsInRange, ...salaryItems, ...savingsItems];
-    console.log(`Total calendar items: ${allItems.length}`);
-    
-    return allItems;
-  }, [transactions, goals, currentDate, generateSalaryTransactions]);
+  const { calendarItems, getItemsForDate, isLoading } = useCalendarData(currentDate);
+  const createTransactionMutation = useCreateTransaction();
+  const deleteTransactionMutation = useDeleteTransaction();
+  const { toast } = useToast();
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -117,9 +30,7 @@ const Calendar = () => {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
-    const hasItems = calendarItems.some(item => 
-      new Date(item.date).toDateString() === date.toDateString()
-    );
+    const hasItems = getItemsForDate(date).length > 0;
     
     if (hasItems) {
       setShowViewModal(true);
@@ -128,33 +39,58 @@ const Calendar = () => {
     }
   };
 
-  const handleAddItem = (item: Omit<CalendarItem, 'id'>) => {
-    console.log('Adding new transaction:', item.title, item.amount);
-    addTransaction({
-      type: item.type === 'savings' ? 'savings' : item.type,
-      amount: item.amount,
-      description: item.title,
-      date: item.date,
-      category: item.category,
-    });
+  const handleAddItem = async (item: Omit<CalendarItem, 'id'>) => {
+    try {
+      await createTransactionMutation.mutateAsync({
+        type: item.type === 'borrow' ? 'income' : item.type,
+        amount: item.amount,
+        description: item.title,
+        date: item.date,
+        category: item.category || (item.type === 'borrow' ? 'advance' : undefined),
+      });
+      
+      toast({
+        title: "Item Added!",
+        description: `${item.title} has been added to your calendar`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteItem = (id: string) => {
-    console.log('Deleting transaction:', id);
-    deleteTransaction(id);
+  const handleDeleteItem = async (id: string) => {
+    // Only delete if it's not a generated salary transaction
+    if (id.startsWith('salary-') || id.startsWith('savings-')) {
+      toast({
+        title: "Cannot Delete",
+        description: "Generated transactions cannot be deleted directly",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await deleteTransactionMutation.mutateAsync(id);
+      toast({
+        title: "Item Deleted",
+        description: "Transaction has been removed",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive"
+      });
+    }
   };
 
-  const getItemsForDate = (date: Date) => {
-    return calendarItems.filter(item => 
-      new Date(item.date).toDateString() === date.toDateString()
-    );
-  };
-
-  const handleAddSavings = (savings: { goalId: string; amount: number; description: string }) => {
-    console.log('Adding savings contribution:', savings.description, savings.amount);
-    addSavingsContribution(savings.goalId, savings.amount, savings.description, true);
-    setShowAddSavingsModal(false);
-  };
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -194,13 +130,6 @@ const Calendar = () => {
           setShowViewModal(false);
           setShowAddModal(true);
         }}
-      />
-
-      <AddSavingsDialog
-        open={showAddSavingsModal}
-        onOpenChange={setShowAddSavingsModal}
-        selectedDate={selectedDate}
-        onAddSavings={handleAddSavings}
       />
     </div>
   );

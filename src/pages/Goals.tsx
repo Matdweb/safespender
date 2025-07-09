@@ -3,39 +3,98 @@ import React, { useState } from 'react';
 import Header from '@/components/Header';
 import GoalCard from '@/components/goals/GoalCard';
 import AddGoalModal from '@/components/goals/AddGoalModal';
+import LoadingScreen from '@/components/LoadingScreen';
 import { Button } from '@/components/ui/button';
 import { Plus, Target } from 'lucide-react';
-import { useFinancial } from '@/contexts/FinancialContext';
+import { useSavingsGoals, useCreateSavingsGoal, useUpdateSavingsGoal, useDeleteSavingsGoal } from '@/hooks/useFinancialData';
+import { useToast } from '@/hooks/use-toast';
 
 const Goals = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   
-  const { goals, addGoal, updateGoal, deleteGoal } = useFinancial();
+  const { data: goals, isLoading } = useSavingsGoals();
+  const createGoalMutation = useCreateSavingsGoal();
+  const updateGoalMutation = useUpdateSavingsGoal();
+  const deleteGoalMutation = useDeleteSavingsGoal();
+  const { toast } = useToast();
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle('dark');
   };
 
-  const handleAddGoal = (newGoal: any) => {
-    addGoal({
-      name: newGoal.name,
-      targetAmount: newGoal.targetAmount,
-      currentAmount: newGoal.currentAmount || 0,
-      recurringContribution: newGoal.recurringContribution || 0,
-      contributionFrequency: newGoal.contributionFrequency || 'monthly',
-      icon: newGoal.icon || '💰'
-    });
+  const handleAddGoal = async (newGoal: any) => {
+    try {
+      await createGoalMutation.mutateAsync({
+        name: newGoal.name,
+        target_amount: newGoal.targetAmount,
+        current_amount: newGoal.currentAmount || 0,
+        recurring_contribution: newGoal.recurringContribution || 0,
+        contribution_frequency: newGoal.contributionFrequency,
+        icon: newGoal.icon || '💰'
+      });
+      
+      toast({
+        title: "Goal Created!",
+        description: `${newGoal.name} has been added to your savings goals`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create goal",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleUpdateGoal = (updatedGoal: any) => {
-    updateGoal(updatedGoal.id, updatedGoal);
+  const handleUpdateGoal = async (updatedGoal: any) => {
+    try {
+      await updateGoalMutation.mutateAsync({
+        id: updatedGoal.id,
+        updates: {
+          name: updatedGoal.name,
+          target_amount: updatedGoal.target_amount,
+          current_amount: updatedGoal.current_amount,
+          recurring_contribution: updatedGoal.recurring_contribution,
+          contribution_frequency: updatedGoal.contribution_frequency,
+          icon: updatedGoal.icon
+        }
+      });
+      
+      toast({
+        title: "Goal Updated!",
+        description: "Your savings goal has been updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update goal",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteGoal = (goalId: string) => {
-    deleteGoal(goalId);
+  const handleDeleteGoal = async (goalId: string) => {
+    try {
+      await deleteGoalMutation.mutateAsync(goalId);
+      
+      toast({
+        title: "Goal Deleted",
+        description: "Your savings goal has been removed",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete goal",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -57,6 +116,7 @@ const Goals = () => {
             <Button 
               onClick={() => setShowAddModal(true)}
               className="bg-primary hover:bg-primary/90 text-primary-foreground hover-lift"
+              disabled={createGoalMutation.isPending}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Goal
@@ -65,7 +125,7 @@ const Goals = () => {
         </div>
 
         {/* Goals Grid */}
-        {goals.length === 0 ? (
+        {!goals || goals.length === 0 ? (
           <div className="animate-fade-in text-center py-16">
             <div className="max-w-md mx-auto">
               <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -81,6 +141,7 @@ const Goals = () => {
                 onClick={() => setShowAddModal(true)}
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground hover-lift"
+                disabled={createGoalMutation.isPending}
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Create Your First Goal
@@ -96,7 +157,15 @@ const Goals = () => {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <GoalCard
-                  goal={goal}
+                  goal={{
+                    id: goal.id,
+                    name: goal.name,
+                    targetAmount: parseFloat(goal.target_amount.toString()),
+                    currentAmount: parseFloat(goal.current_amount.toString()),
+                    recurringContribution: goal.recurring_contribution ? parseFloat(goal.recurring_contribution.toString()) : 0,
+                    contributionFrequency: goal.contribution_frequency as 'weekly' | 'biweekly' | 'monthly' | undefined,
+                    icon: goal.icon || '💰'
+                  }}
                   onUpdate={handleUpdateGoal}
                   onDelete={handleDeleteGoal}
                 />
@@ -106,7 +175,7 @@ const Goals = () => {
         )}
 
         {/* Summary Stats */}
-        {goals.length > 0 && (
+        {goals && goals.length > 0 && (
           <div className="animate-slide-up bg-card border border-border rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Your Progress</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -118,13 +187,13 @@ const Goals = () => {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-foreground">
-                  ${goals.reduce((sum, goal) => sum + goal.currentAmount, 0).toLocaleString()}
+                  ${goals.reduce((sum, goal) => sum + parseFloat(goal.current_amount.toString()), 0).toLocaleString()}
                 </div>
                 <div className="text-sm text-muted-foreground">Total Saved</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-foreground">
-                  ${goals.reduce((sum, goal) => sum + goal.targetAmount, 0).toLocaleString()}
+                  ${goals.reduce((sum, goal) => sum + parseFloat(goal.target_amount.toString()), 0).toLocaleString()}
                 </div>
                 <div className="text-sm text-muted-foreground">Total Target</div>
               </div>

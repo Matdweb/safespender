@@ -8,12 +8,12 @@ import SavingsGoals from '@/components/SavingsGoals';
 import TransactionsList from '@/components/TransactionsList';
 import AddIncomeDialog from '@/components/AddIncomeDialog';
 import AddExpenseDialog from '@/components/AddExpenseDialog';
-import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
-import { useToast } from '@/hooks/use-toast';
-import { useFinancial } from '@/contexts/FinancialContext';
 import AddSavingsDialog from '@/components/AddSavingsDialog';
 import SetSalaryModal from '@/components/SetSalaryModal';
-import { testSalaryCalculations } from '@/utils/salaryTestUtils';
+import LoadingScreen from '@/components/LoadingScreen';
+import { useToast } from '@/hooks/use-toast';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useCreateTransaction, useCreateSavingsGoal, useUpdateSalaryConfiguration, useCreateSalaryConfiguration } from '@/hooks/useFinancialData';
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -26,32 +26,25 @@ const Index = () => {
   const {
     transactions,
     goals,
-    addTransaction,
-    deleteTransaction,
-    getTotalIncome,
-    getTotalExpenses,
-    getReservedExpenses,
-    getFreeToSpend,
+    salary,
+    totalIncome,
+    totalExpenses,
+    reservedExpenses,
+    assignedSavings,
+    freeToSpend,
     generateSalaryTransactions,
-    getNextIncomeDate,
-    isFirstTimeUser,
-    completeOnboarding,
-    addSavingsContribution,
-    setSalary,
-    getSalary
-  } = useFinancial();
+    isLoading
+  } = useFinancialDashboard();
 
-  // Test salary calculations when salary config changes
-  useEffect(() => {
-    const currentSalary = getSalary();
-    if (currentSalary) {
-      console.log('🔍 Testing current salary configuration...');
-      testSalaryCalculations(currentSalary);
-    }
-  }, [getSalary]);
+  const createTransactionMutation = useCreateTransaction();
+  const createSavingsGoalMutation = useCreateSavingsGoal();
+  const updateSalaryMutation = useUpdateSalaryConfiguration();
+  const createSalaryMutation = useCreateSalaryConfiguration();
 
   // Generate upcoming events from salary and goals
   const upcomingEvents = React.useMemo(() => {
+    if (!transactions || !goals) return [];
+    
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
     const salaryTransactions = generateSalaryTransactions(now, nextMonth);
@@ -66,15 +59,18 @@ const Index = () => {
         date: t.date,
         recurring: true
       })),
-      // Add savings goals as upcoming events
-      ...goals.filter(g => g.recurringContribution > 0).slice(0, 2).map(goal => ({
-        id: `goal-${goal.id}`,
-        type: 'savings' as const,
-        title: `${goal.icon} ${goal.name} Contribution`,
-        amount: goal.recurringContribution,
-        date: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        recurring: true
-      }))
+      // Add future transactions
+      ...transactions
+        .filter(t => new Date(t.date) > now)
+        .slice(0, 3)
+        .map(t => ({
+          id: t.id,
+          type: t.type as 'income' | 'expense',
+          title: t.description,
+          amount: parseFloat(t.amount.toString()),
+          date: t.date,
+          recurring: false
+        }))
     ];
   }, [transactions, goals, generateSalaryTransactions]);
 
@@ -83,42 +79,50 @@ const Index = () => {
     document.documentElement.classList.toggle('dark');
   };
 
-  const handleAddIncome = (income: any) => {
-    addTransaction({
-      type: 'income',
-      amount: income.amount,
-      description: income.description,
-      date: income.date
-    });
-    
-    toast({
-      title: "Income Added!",
-      description: `$${income.amount.toLocaleString()} added to your account`,
-    });
+  const handleAddIncome = async (income: any) => {
+    try {
+      await createTransactionMutation.mutateAsync({
+        type: 'income',
+        amount: income.amount,
+        description: income.description,
+        date: income.date
+      });
+      
+      toast({
+        title: "Income Added!",
+        description: `$${income.amount.toLocaleString()} added to your account`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add income",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleAddExpense = (expense: any) => {
-    addTransaction({
-      type: 'expense',
-      amount: expense.amount,
-      description: expense.description,
-      date: expense.date,
-      category: expense.category,
-      isReserved: expense.isReserved,
-    });
-    
-    toast({
-      title: "Expense Recorded",
-      description: `$${expense.amount.toLocaleString()} ${expense.category} expense added`,
-    });
-  };
-
-  const handleDeleteTransaction = (id: string) => {
-    deleteTransaction(id);
-    toast({
-      title: "Transaction Deleted",
-      description: "Transaction has been removed",
-    });
+  const handleAddExpense = async (expense: any) => {
+    try {
+      await createTransactionMutation.mutateAsync({
+        type: 'expense',
+        amount: expense.amount,
+        description: expense.description,
+        date: expense.date,
+        category: expense.category,
+        is_reserved: expense.isReserved,
+      });
+      
+      toast({
+        title: "Expense Recorded",
+        description: `$${expense.amount.toLocaleString()} ${expense.category} expense added`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add expense",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddGoal = () => {
@@ -128,33 +132,57 @@ const Index = () => {
     });
   };
 
-  const handleAddSavings = (savings: { goalId: string; amount: number; description: string }) => {
-    addSavingsContribution(savings.goalId, savings.amount, savings.description, true);
-    
-    toast({
-      title: "Savings Added!",
-      description: `$${savings.amount.toLocaleString()} added to your savings goal`,
-    });
+  const handleAddSavings = async (savings: { goalId: string; amount: number; description: string }) => {
+    try {
+      await createTransactionMutation.mutateAsync({
+        type: 'savings',
+        amount: savings.amount,
+        description: savings.description,
+        date: new Date().toISOString().split('T')[0],
+        goal_id: savings.goalId,
+      });
+      
+      toast({
+        title: "Savings Added!",
+        description: `$${savings.amount.toLocaleString()} added to your savings goal`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add savings",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSetSalary = (salary: any) => {
-    console.log('🎯 Setting new salary configuration:', salary);
-    setSalary(salary);
-    
-    // Test the new configuration
-    setTimeout(() => {
-      testSalaryCalculations(salary);
-    }, 100);
-    
-    toast({
-      title: "Salary Configuration Updated!",
-      description: "Your salary schedule has been saved and tested",
-    });
+  const handleSetSalary = async (salaryData: any) => {
+    try {
+      if (salary) {
+        await updateSalaryMutation.mutateAsync(salaryData);
+      } else {
+        await createSalaryMutation.mutateAsync(salaryData);
+      }
+      
+      toast({
+        title: "Salary Configuration Updated!",
+        description: "Your salary schedule has been saved",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save salary configuration",
+        variant: "destructive"
+      });
+    }
   };
 
   useEffect(() => {
     document.body.classList.add('animate-fade-in');
   }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 transition-colors duration-300`}>
@@ -174,10 +202,10 @@ const Index = () => {
         {/* Free to Spend Card - Hero */}
         <div className="animate-scale-in">
           <FreeToSpendCard
-            amount={getFreeToSpend()}
-            balance={getTotalIncome() - getTotalExpenses()}
-            reservedExpenses={getReservedExpenses()}
-            assignedSavings={goals.reduce((sum, goal) => sum + goal.currentAmount, 0)}
+            amount={freeToSpend}
+            balance={totalIncome - totalExpenses}
+            reservedExpenses={reservedExpenses}
+            assignedSavings={assignedSavings}
           />
         </div>
 
@@ -196,8 +224,8 @@ const Index = () => {
         {/* Transactions List */}
         <div className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
           <TransactionsList 
-            transactions={transactions}
-            onDeleteTransaction={handleDeleteTransaction}
+            transactions={transactions || []}
+            onDeleteTransaction={() => {}}
           />
         </div>
 
@@ -207,7 +235,7 @@ const Index = () => {
             <UpcomingEvents events={upcomingEvents} />
           </div>
           <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <SavingsGoals goals={goals} onAddGoal={handleAddGoal} />
+            <SavingsGoals goals={goals || []} onAddGoal={handleAddGoal} />
           </div>
         </div>
 
@@ -246,13 +274,7 @@ const Index = () => {
         open={showSalaryModal}
         onOpenChange={setShowSalaryModal}
         onSetSalary={handleSetSalary}
-        currentSalary={getSalary()}
-      />
-
-      {/* Onboarding Flow */}
-      <OnboardingFlow
-        open={isFirstTimeUser}
-        onComplete={completeOnboarding}
+        currentSalary={salary}
       />
     </div>
   );
