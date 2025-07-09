@@ -1,83 +1,58 @@
 
 import { SalaryConfig } from '@/contexts/FinancialContext';
 
-// Test utility to validate salary calculations
 export const testSalaryCalculations = (salaryConfig: SalaryConfig) => {
   console.log('🧪 Testing Salary Configuration:', salaryConfig);
   
-  const today = new Date();
-  const testStartDate = new Date(today.getFullYear(), today.getMonth(), 1);
-  const testEndDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+  // Test quarterly amounts
+  const totalQuarterly = salaryConfig.quarterlyAmounts.reduce((sum, q) => sum + q.amount, 0);
+  const avgQuarterly = totalQuarterly / salaryConfig.quarterlyAmounts.length;
+  console.log(`📊 Average quarterly amount: $${avgQuarterly.toLocaleString()}`);
   
-  console.log(`Test period: ${testStartDate.toDateString()} to ${testEndDate.toDateString()}`);
-  
-  const expectedTransactions = [];
-  
-  // Generate expected salary dates
-  for (let month = 0; month < 3; month++) {
-    const currentMonth = new Date(today.getFullYear(), today.getMonth() + month, 1);
-    
-    for (const dayOfMonth of salaryConfig.daysOfMonth) {
-      const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-      const validDay = Math.min(dayOfMonth, daysInMonth);
-      const salaryDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), validDay);
-      
-      if (salaryDate >= testStartDate && salaryDate <= testEndDate) {
-        let expectedAmount = 0;
-        
-        if (salaryConfig.frequency === 'biweekly') {
-          // For biweekly, alternate between quarters
-          const monthsSinceStart = salaryDate.getMonth() - today.getMonth();
-          const payDayIndex = salaryConfig.daysOfMonth.indexOf(dayOfMonth);
-          const isFirstPaycheck = (monthsSinceStart + payDayIndex) % 2 === 0;
-          const quarterKey = isFirstPaycheck ? 'First Paycheck' : 'Second Paycheck';
-          const quarterAmount = salaryConfig.quarterlyAmounts.find(q => q.quarter === quarterKey);
-          expectedAmount = quarterAmount?.amount || 0;
-        } else if (salaryConfig.frequency === 'monthly') {
-          const quarterAmount = salaryConfig.quarterlyAmounts.find(q => q.quarter === 'Paycheck');
-          expectedAmount = quarterAmount?.amount || 0;
-        }
-        
-        expectedTransactions.push({
-          date: salaryDate.toISOString().split('T')[0],
-          amount: expectedAmount,
-          description: `Expected ${salaryConfig.frequency} salary`
-        });
-      }
-    }
+  // Test payment frequency calculations
+  let paymentAmount = 0;
+  switch (salaryConfig.frequency) {
+    case 'weekly':
+      paymentAmount = avgQuarterly / 13;
+      console.log(`💰 Weekly payment: $${paymentAmount.toLocaleString()}`);
+      break;
+    case 'biweekly':
+      paymentAmount = avgQuarterly / 6.5;
+      console.log(`💰 Biweekly payment: $${paymentAmount.toLocaleString()}`);
+      break;
+    case 'monthly':
+      paymentAmount = avgQuarterly / 3;
+      console.log(`💰 Monthly payment: $${paymentAmount.toLocaleString()}`);
+      break;
+    case 'yearly':
+      paymentAmount = avgQuarterly * 4;
+      console.log(`💰 Yearly payment: $${paymentAmount.toLocaleString()}`);
+      break;
   }
   
-  console.log('📊 Expected Salary Transactions:', expectedTransactions);
+  // Test payment days
+  console.log(`📅 Payment days of month: ${salaryConfig.daysOfMonth.join(', ')}`);
   
-  // Calculate expected monthly total
-  const monthlyTotal = expectedTransactions.reduce((sum, t) => sum + t.amount, 0);
-  console.log(`💰 Expected total for 3 months: $${monthlyTotal}`);
+  // Calculate next payment date
+  const today = new Date();
+  const nextPaymentDate = new Date(today);
   
-  return {
-    expectedTransactions,
-    monthlyTotal,
-    testPeriod: { start: testStartDate, end: testEndDate }
-  };
-};
-
-export const validateFreeToSpendCalculation = (
-  totalIncomeReceived: number,
-  totalExpensesPaid: number,
-  upcomingExpenses: number,
-  upcomingSavings: number,
-  totalBorrowed: number,
-  totalSavingsContributions: number
-) => {
-  const calculatedFreeToSpend = totalIncomeReceived - totalExpensesPaid - upcomingExpenses - upcomingSavings + totalBorrowed - totalSavingsContributions;
+  switch (salaryConfig.frequency) {
+    case 'weekly':
+      nextPaymentDate.setDate(today.getDate() + 7);
+      break;
+    case 'biweekly':
+      nextPaymentDate.setDate(today.getDate() + 14);
+      break;
+    case 'monthly':
+      nextPaymentDate.setMonth(today.getMonth() + 1);
+      nextPaymentDate.setDate(salaryConfig.daysOfMonth[0] || 1);
+      break;
+    case 'yearly':
+      nextPaymentDate.setFullYear(today.getFullYear() + 1);
+      break;
+  }
   
-  console.log('🧮 Free to Spend Validation:');
-  console.log(`Income received: $${totalIncomeReceived}`);
-  console.log(`Expenses paid: $${totalExpensesPaid}`);
-  console.log(`Upcoming expenses: $${upcomingExpenses}`);
-  console.log(`Upcoming savings: $${upcomingSavings}`);
-  console.log(`Total borrowed: $${totalBorrowed}`);
-  console.log(`Savings contributions: $${totalSavingsContributions}`);
-  console.log(`Calculated Free to Spend: $${Math.max(0, calculatedFreeToSpend)}`);
-  
-  return Math.max(0, calculatedFreeToSpend);
+  console.log(`📅 Next payment date: ${nextPaymentDate.toLocaleDateString()}`);
+  console.log('✅ Salary configuration test complete');
 };
