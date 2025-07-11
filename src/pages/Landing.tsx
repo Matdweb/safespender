@@ -149,7 +149,7 @@ const Landing = () => {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 md:min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-primary" />
                   </div>
                   <div>
@@ -161,7 +161,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 md:min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Clock className="w-6 h-6 text-primary" />
                   </div>
                   <div>
@@ -173,7 +173,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 md:min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
                     <CheckCircle className="w-6 h-6 text-primary" />
                   </div>
                   <div>
@@ -218,7 +218,7 @@ const Landing = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {features.map((feature, index) => <Card key={index} className="hover-lift">
                   <CardHeader>
-                    <div className="w-12 h-12 min-w-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 md:min-w-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                       <feature.icon className="w-6 h-6 text-primary" />
                     </div>
                     <CardTitle className="text-lg">{feature.title}</CardTitle>
