@@ -39,7 +39,14 @@ const Index = () => {
   } = useFinancialDashboard();
 
   const { handleAddIncome, handleAddExpense, handleAddSavings } = useDashboardHandlers();
-  const upcomingEvents = useUpcomingEvents(transactions, goals, salary, generateSalaryTransactions);
+  
+  // Cast transactions to proper type for upcoming events
+  const typedTransactions = transactions?.map(t => ({
+    ...t,
+    type: t.type as 'income' | 'expense' | 'savings'
+  }));
+  
+  const upcomingEvents = useUpcomingEvents(typedTransactions, goals, salary, generateSalaryTransactions);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);

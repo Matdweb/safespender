@@ -20,7 +20,7 @@ interface SavingsGoal {
 interface SalaryConfiguration {
   frequency: string;
   days_of_month: number[];
-  quarterly_amounts: any[];
+  quarterly_amounts: any;
 }
 
 interface UpcomingEvent {
