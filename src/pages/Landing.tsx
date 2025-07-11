@@ -247,31 +247,40 @@ const Landing = () => {
               Start free and upgrade when you're ready for premium features.
             </p>
             
-            <Card className="max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle>Early Access</CardTitle>
-                <CardDescription>Get started with all features completely free</CardDescription>
+            <Card className="max-w-md mx-auto hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-2 border-primary/20 bg-gradient-to-br from-card to-card/50">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Early Access</CardTitle>
+                <CardDescription className="text-base">Get started with all features completely free</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="text-4xl font-bold mb-4">Free</div>
-                <ul className="space-y-2 text-left">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    Calendar-based budgeting
+              <CardContent className="space-y-6">
+                <div className="text-center">
+                  <div className="text-5xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Free</div>
+                  <p className="text-sm text-muted-foreground">Forever • No credit card required</p>
+                </div>
+                <ul className="space-y-3 text-left">
+                  <li className="flex items-center gap-3 group">
+                    <CheckCircle className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    <span className="group-hover:text-primary transition-colors duration-200">Calendar-based budgeting</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    Income & expense tracking
+                  <li className="flex items-center gap-3 group">
+                    <CheckCircle className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    <span className="group-hover:text-primary transition-colors duration-200">Income & expense tracking</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    Savings goals
+                  <li className="flex items-center gap-3 group">
+                    <CheckCircle className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    <span className="group-hover:text-primary transition-colors duration-200">Savings goals</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    Smart notifications
+                  <li className="flex items-center gap-3 group">
+                    <CheckCircle className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    <span className="group-hover:text-primary transition-colors duration-200">Smart notifications</span>
                   </li>
                 </ul>
+                <Button className="w-full mt-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300" asChild>
+                  <Link to="/login">
+                    Get Started Free
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           </div>
