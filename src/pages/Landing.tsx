@@ -331,10 +331,6 @@ const Landing = () => {
                 Contact
               </a>
             </nav>
-            
-            <Button variant="ghost" size="sm" onClick={toggleDarkMode} className="rounded-full">
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
           </div>
           
           <div className="mt-8 pt-8 border-t border-border text-center">
