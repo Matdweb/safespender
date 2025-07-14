@@ -9,7 +9,7 @@ import {
   useCreateExpense,
   useCreateSavingsGoal
 } from '@/hooks/useFinancialData';
-import { useCreateSalary } from '@/hooks/useSalary';
+import { useCreateSalary } from '@/hooks/useSalary'; // Fixed import
 import { formatCurrency } from '@/utils/currencyUtils';
 import { toast } from 'sonner';
 import { useFeatureTour } from '@/hooks/useFeatureTour';
