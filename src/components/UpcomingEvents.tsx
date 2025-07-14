@@ -2,7 +2,6 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, DollarSign, TrendingUp, Target, ArrowUpCircle } from 'lucide-react';
-import { useFinancial } from '@/contexts/FinancialContext';
 import CurrencyDisplay from './CurrencyDisplay';
 
 interface Event {
@@ -19,108 +18,6 @@ interface UpcomingEventsProps {
 }
 
 const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
-  const { transactions, goals, generateSalaryTransactions, generateRecurringTransactions } = useFinancial();
-
-  // Generate comprehensive upcoming events for next 2 months
-  const upcomingEvents = React.useMemo(() => {
-    const today = new Date();
-    const twoMonthsAhead = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
-    
-    // Get upcoming salary transactions
-    const salaryTransactions = generateSalaryTransactions(today, twoMonthsAhead);
-    
-    // Get recurring expense transactions
-    const recurringExpenses = generateRecurringTransactions ? generateRecurringTransactions(today, twoMonthsAhead) : [];
-    
-    console.log(`Upcoming events: ${salaryTransactions.length} salary transactions, ${recurringExpenses.length} recurring expenses generated`);
-    
-    // Convert salary transactions to events format
-    const salaryEvents: Event[] = salaryTransactions
-      .filter(t => {
-        const eventDate = new Date(t.date);
-        return eventDate >= today && eventDate <= twoMonthsAhead;
-      })
-      .map(t => ({
-        id: t.id,
-        type: 'income',
-        title: t.description,
-        amount: t.amount,
-        date: t.date,
-        recurring: true
-      }));
-
-    // Convert recurring expenses to events format
-    const recurringExpenseEvents: Event[] = recurringExpenses
-      .filter(t => {
-        const eventDate = new Date(t.date);
-        return eventDate >= today && eventDate <= twoMonthsAhead;
-      })
-      .map(t => ({
-        id: t.id,
-        type: 'expense',
-        title: t.description,
-        amount: t.amount,
-        date: t.date,
-        recurring: true
-      }));
-
-    // Add any future one-time transactions
-    const futureOneTimeEvents: Event[] = transactions
-      .filter(t => {
-        const eventDate = new Date(t.date);
-        return eventDate >= today && eventDate <= twoMonthsAhead;
-      })
-      .map(t => ({
-        id: t.id,
-        type: t.type === 'borrow' ? 'borrow' : t.type,
-        title: t.description,
-        amount: t.amount,
-        date: t.date,
-        recurring: false
-      }));
-
-    // Add savings contributions as events
-    const savingsEvents: Event[] = [];
-    goals.forEach(goal => {
-      if (goal.recurringContribution > 0) {
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
-        
-        // Generate savings events for next 2 months
-        for (let monthOffset = 0; monthOffset <= 2; monthOffset++) {
-          const contributionDate = new Date(currentYear, currentMonth + monthOffset, 1);
-          
-          // Adjust based on contribution frequency
-          if (goal.contributionFrequency === 'monthly') {
-            contributionDate.setDate(1);
-          } else if (goal.contributionFrequency === 'biweekly') {
-            contributionDate.setDate(15);
-          } else if (goal.contributionFrequency === 'weekly') {
-            contributionDate.setDate(7);
-          }
-          
-          if (contributionDate >= today && contributionDate <= twoMonthsAhead) {
-            savingsEvents.push({
-              id: `savings-${goal.id}-${contributionDate.getTime()}`,
-              type: 'savings',
-              title: goal.name,
-              amount: goal.recurringContribution,
-              date: contributionDate.toISOString().split('T')[0],
-              recurring: true
-            });
-          }
-        }
-      }
-    });
-
-    // Combine and sort all events by date
-    const allEvents = [...salaryEvents, ...recurringExpenseEvents, ...futureOneTimeEvents, ...savingsEvents]
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 20); // Limit to first 20 events
-
-    console.log(`Total upcoming events: ${allEvents.length}`);
-    return allEvents;
-  }, [transactions, goals, generateSalaryTransactions, generateRecurringTransactions]);
 
   const getEventIcon = (type: string) => {
     switch (type) {
@@ -161,12 +58,12 @@ const UpcomingEvents = ({ events }: UpcomingEventsProps) => {
 
       <ScrollArea className="h-80">
         <div className="space-y-3 pr-4">
-          {upcomingEvents.length === 0 ? (
+          {events.length === 0 ? (
             <p className="text-subtle text-center py-8">
               No upcoming events. Add some income or expenses to get started!
             </p>
           ) : (
-            upcomingEvents.map((event) => (
+            events.map((event) => (
               <div
                 key={event.id}
                 className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${getEventColor(event.type)}`}
