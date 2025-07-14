@@ -5,6 +5,9 @@ import {
   getFinancialProfile,
   createFinancialProfile,
   updateFinancialProfile,
+  createSalary,
+  getSalary,
+  updateSalary,
   getExpenses,
   createExpense,
   updateExpense,
@@ -18,7 +21,7 @@ import {
   updateTransaction,
   deleteTransaction,
   type FinancialProfile,
-  
+  type Salary,
   type Expense,
   type SavingsGoal,
   type Transaction
@@ -60,7 +63,40 @@ export const useUpdateFinancialProfile = () => {
   });
 };
 
-// Note: Salary hooks moved to dedicated useSalary.ts
+// Salary Hooks
+export const useSalary = () => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['salary', user?.id],
+    queryFn: getSalary,
+    enabled: !!user,
+  });
+};
+
+export const useCreateSalary = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: (salary: Omit<TablesInsert<'salary'>, 'user_id'>) => 
+      createSalary({ ...salary, user_id: user!.id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary'] });
+    },
+  });
+};
+
+export const useUpdateSalary = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateSalary,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary'] });
+    },
+  });
+};
 
 // Expenses Hooks
 export const useExpenses = () => {

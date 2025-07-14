@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   useCreateFinancialProfile,
-  useCreateSalaryConfiguration,
+  useCreateSalary,
   useCreateExpense,
   useCreateSavingsGoal
 } from '@/hooks/useFinancialData';
@@ -24,7 +24,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
   const { user } = useAuth();
   const { startTour } = useFeatureTour();
   const createFinancialProfile = useCreateFinancialProfile();
-  const createSalaryConfiguration = useCreateSalaryConfiguration();
+  const createSalary = useCreateSalary();
   const createExpense = useCreateExpense();
   const createSavingsGoal = useCreateSavingsGoal();
 
@@ -50,15 +50,13 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
       if (data.salary) {
         console.log('💰 Creating new salary:', data.salary);
 
-        const salaryInserts = {
-          user_id: user.id,
-          payment_schedule: data.salary.frequency,      // e.g. 'monthly', 'bi-weekly'
-          payment_days: data.salary.daysOfMonth,        // e.g. [15, 30]
+        const salaryData = {
+          schedule: data.salary.frequency,                              // e.g. 'monthly', 'bi-weekly'
+          pay_dates: data.salary.daysOfMonth,                          // e.g. [15, 30]
           paychecks: data.salary.quarterlyAmounts.map(q => q.amount),  // Just the amounts
-          created_at: new Date().toISOString()
         };
 
-        await createSalary.mutateAsync(salaryInserts);
+        await createSalary.mutateAsync(salaryData);
       }
 
       // 3. Create expenses if provided
@@ -111,7 +109,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
 
   const isLoading = 
     createFinancialProfile.isPending || 
-    createSalaryConfiguration.isPending || 
+    createSalary.isPending || 
     createExpense.isPending || 
     createSavingsGoal.isPending;
 
