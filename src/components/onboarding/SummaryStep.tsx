@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   useCreateFinancialProfile,
+  useCreateSalaryConfiguration,
   useCreateExpense,
   useCreateSavingsGoal
 } from '@/hooks/useFinancialData';
-import { useCreateSalary } from '@/hooks/useSalary';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { toast } from 'sonner';
 import { useFeatureTour } from '@/hooks/useFeatureTour';
@@ -24,7 +24,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
   const { user } = useAuth();
   const { startTour } = useFeatureTour();
   const createFinancialProfile = useCreateFinancialProfile();
-  const createSalary = useCreateSalary();
+  const createSalaryConfiguration = useCreateSalaryConfiguration();
   const createExpense = useCreateExpense();
   const createSavingsGoal = useCreateSavingsGoal();
 
@@ -52,9 +52,10 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
 
         const salaryInserts = {
           user_id: user.id,
-          schedule: data.salary.frequency,      // e.g. 'monthly', 'bi-weekly'
-          pay_dates: data.salary.daysOfMonth,        // e.g. [15, 30]
+          payment_schedule: data.salary.frequency,      // e.g. 'monthly', 'bi-weekly'
+          payment_days: data.salary.daysOfMonth,        // e.g. [15, 30]
           paychecks: data.salary.quarterlyAmounts.map(q => q.amount),  // Just the amounts
+          created_at: new Date().toISOString()
         };
 
         await createSalary.mutateAsync(salaryInserts);
@@ -110,7 +111,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
 
   const isLoading = 
     createFinancialProfile.isPending || 
-    createSalary.isPending || 
+    createSalaryConfiguration.isPending || 
     createExpense.isPending || 
     createSavingsGoal.isPending;
 

@@ -4,7 +4,7 @@ import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/type
 import { generateRecurringExpenses, RecurringExpense } from '@/hooks/useRecurringExpenses';
 
 export type FinancialProfile = Tables<'financial_profiles'>;
-
+export type SalaryConfiguration = Tables<'salary_configurations'>;
 export type Expense = Tables<'expenses'>;
 export type SavingsGoal = Tables<'savings_goals'>;
 export type Transaction = Tables<'transactions'>;
@@ -42,10 +42,10 @@ export const updateFinancialProfile = async (updates: TablesUpdate<'financial_pr
   return data;
 };
 
-// Salary Operations
-export const createSalary = async (salary: TablesInsert<'salary'>) => {
+// New Salary Operations
+export const createSalary = async (salary: TablesInsert<'salaries'>) => {
   const { data, error } = await supabase
-    .from('salary')
+    .from('salaries')
     .insert(salary)
     .select()
     .single();
@@ -56,7 +56,7 @@ export const createSalary = async (salary: TablesInsert<'salary'>) => {
 
 export const getSalary = async () => {
   const { data, error } = await supabase
-    .from('salary')
+    .from('salaries')
     .select('*')
     .single();
 
@@ -64,9 +64,9 @@ export const getSalary = async () => {
   return data;
 };
 
-export const updateSalary = async (updates: TablesUpdate<'salary'>) => {
+export const updateSalary = async (updates: TablesUpdate<'salaries'>) => {
   const { data, error } = await supabase
-    .from('salary')
+    .from('salaries')
     .update(updates)
     .select()
     .single();
