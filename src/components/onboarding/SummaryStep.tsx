@@ -53,7 +53,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
         const schedule = data.salary.frequency === 'quarterly' ? 'monthly' : data.salary.frequency;
         const payDates = data.salary.daysOfMonth || [1];
         const paychecks = data.salary.quarterlyAmounts ? 
-          Object.values(data.salary.quarterlyAmounts as Record<string, number>) : [0];
+          data.salary.quarterlyAmounts.map((q: any) => q.amount) : [0];
         
         await createSalary.mutateAsync({
           schedule: schedule as 'monthly' | 'biweekly' | 'yearly',
@@ -133,9 +133,9 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
           <br />
           <strong>Pay Days:</strong> {data.salary.daysOfMonth.join(', ')}
           <br />
-          <strong>Quarterly Amounts:</strong>
+          <strong>Amounts:</strong>
           <ul>
-            {data.salary.quarterlyAmounts.map((q, index) => (
+            {data.salary.quarterlyAmounts.map((q: any, index: number) => (
               <li key={index}>
                 {q.quarter}: {formatCurrency(q.amount, data.currency || 'USD')}
               </li>

@@ -1,7 +1,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useTransactions } from './useFinancialData';
-import { useFinancialDashboard } from './useFinancialDashboard';
+import { useSimplifiedFinancialDashboard } from './useSimplifiedFinancialDashboard';
 import { CalendarItem } from '@/types/calendar';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,7 +17,7 @@ export interface CalendarTransaction {
 
 export const useCalendarData = (currentDate: Date) => {
   const { data: transactions, isLoading } = useTransactions();
-  const { generateSalaryTransactions, goals } = useFinancialDashboard();
+  const { generateSalaryTransactions, goals } = useSimplifiedFinancialDashboard();
 
   const calendarItems = useMemo(async () => {
     if (!transactions) return [];

@@ -122,36 +122,6 @@ export type Database = {
         }
         Relationships: []
       }
-      salary_configurations: {
-        Row: {
-          created_at: string
-          days_of_month: number[]
-          frequency: string
-          id: string
-          quarterly_amounts: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          days_of_month: number[]
-          frequency: string
-          id?: string
-          quarterly_amounts: Json
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          days_of_month?: number[]
-          frequency?: string
-          id?: string
-          quarterly_amounts?: Json
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       savings_goals: {
         Row: {
           contribution_frequency: string | null
