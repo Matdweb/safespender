@@ -150,7 +150,7 @@ const Landing = () => {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 md:min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-primary" />
                   </div>
                   <div>
