@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   useCreateFinancialProfile,
-  useCreateSalary,
   useCreateExpense,
   useCreateSavingsGoal
 } from '@/hooks/useFinancialData';
+import { useCreateSalary } from '@/hooks/useSalary';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { toast } from 'sonner';
 import { useFeatureTour } from '@/hooks/useFeatureTour';
