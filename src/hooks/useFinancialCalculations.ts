@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useExpenseCalculations } from '@/hooks/useExpenseCalculations';
 
 interface Transaction {
   id: string;
@@ -50,6 +50,8 @@ export const useFinancialCalculations = (
   profile: FinancialProfile | undefined,
   salary: SalaryData | undefined
 ): FinancialCalculations => {
+  const { reservedExpenses: newReservedExpenses } = useExpenseCalculations();
+  
   const [calculations, setCalculations] = useState<FinancialCalculations>({
     totalIncome: 0,
     totalExpenses: 0,
@@ -84,25 +86,8 @@ export const useFinancialCalculations = (
         .filter(t => t.type === 'savings' && new Date(t.date + 'T00:00:00') <= today)
         .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
 
-      // Calculate reserved expenses (recurring expenses for current month)
-      let reservedExpenses = 0;
-      try {
-        const { data: recurringExpenses } = await supabase.rpc('generate_recurring_expenses', {
-          user_id_param: (await supabase.auth.getUser()).data.user?.id,
-          start_date_param: currentMonth.toISOString().split('T')[0],
-          end_date_param: nextMonth.toISOString().split('T')[0]
-        });
-
-        if (recurringExpenses) {
-          reservedExpenses = recurringExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
-        }
-      } catch (error) {
-        console.error('Error calculating reserved expenses:', error);
-        // Fallback to old method
-        reservedExpenses = expenses
-          .filter(expense => expense.is_reserved || expense.is_recurring)
-          .reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
-      }
+      // Use the new expense calculation system
+      const reservedExpenses = newReservedExpenses;
 
       // Calculate pending expenses (future one-time expenses)
       const pendingExpenses = transactions
@@ -164,7 +149,7 @@ export const useFinancialCalculations = (
     };
 
     calculateFinancials();
-  }, [transactions, expenses, goals, profile, salary]);
+  }, [transactions, expenses, goals, profile, salary, newReservedExpenses]);
 
   return calculations;
 };

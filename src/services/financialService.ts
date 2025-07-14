@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
-import { generateRecurringExpenses, RecurringExpense } from '@/hooks/useRecurringExpenses';
+// Remove old import since useRecurringExpenses was deleted
 
 export type FinancialProfile = Tables<'financial_profiles'>;
 export type Salary = Tables<'salary'>;
@@ -204,15 +204,30 @@ export const deleteTransaction = async (id: string) => {
   if (error) throw error;
 };
 
-// Recurring Expenses Operations
-export const getRecurringExpenses = async (startDate: Date, endDate: Date) => {
+// Recurring Expenses Operations - Now handled by the unified expense system
+export interface RecurringExpense {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  is_recurring: boolean;
+  user_id: string;
+}
+
+export const getRecurringExpenses = async (startDate: Date, endDate: Date): Promise<RecurringExpense[]> => {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('User not authenticated');
 
-  return await generateRecurringExpenses(user.user.id, startDate, endDate);
-};
+  const { data, error } = await supabase.rpc('generate_recurring_expenses', {
+    user_id_param: user.user.id,
+    start_date_param: startDate.toISOString().split('T')[0],
+    end_date_param: endDate.toISOString().split('T')[0]
+  });
 
-export { generateRecurringExpenses, type RecurringExpense };
+  if (error) throw error;
+  return data as RecurringExpense[];
+};
 
 // Delete salary operation
 export const deleteSalary = async (id: string) => {

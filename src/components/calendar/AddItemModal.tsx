@@ -13,6 +13,8 @@ import { CalendarItem } from '@/types/calendar';
 import { DollarSign, TrendingDown, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import UnifiedExpenseDialog from '@/components/UnifiedExpenseDialog';
+import { useExpenseManager } from '@/hooks/useExpenseManager';
 
 interface AddItemModalProps {
   open: boolean;
@@ -29,6 +31,9 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
   const [description, setDescription] = useState('');
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  
+  const { addExpense } = useExpenseManager();
 
   const resetForm = () => {
     setType('expense');
@@ -51,6 +56,12 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // For expenses, use the unified expense dialog
+    if (type === 'expense') {
+      setShowExpenseDialog(true);
+      return;
+    }
+    
     if (!title || !amount) return;
     
     const targetDate = customDate || selectedDate;
@@ -69,6 +80,20 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
     
     resetForm();
     onOpenChange(false);
+  };
+
+  const handleExpenseAdded = async (expense: {
+    title: string;
+    category: string;
+    amount: number;
+    type: 'one-time' | 'monthly';
+    date?: string;
+    day_of_month?: number;
+  }) => {
+    await addExpense(expense);
+    setShowExpenseDialog(false);
+    onOpenChange(false);
+    resetForm();
   };
 
   const typeOptions = [
@@ -207,11 +232,19 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
             />
           </div>
 
-          <div className="p-4 bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              💡 This adds a one-time transaction. For recurring income, use "Set Salary" in your settings.
-            </p>
-          </div>
+          {type === 'expense' ? (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                💡 Click "Add Expense" to open the full expense manager with one-time and recurring options.
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                💡 This adds a one-time transaction. For recurring income, use "Set Salary" in your settings.
+              </p>
+            </div>
+          )}
 
           {/* Description */}
           <div className="space-y-2">
@@ -236,6 +269,13 @@ const AddItemModal = ({ open, onOpenChange, selectedDate, onAddItem }: AddItemMo
           </div>
         </form>
       </DialogContent>
+      
+      <UnifiedExpenseDialog
+        open={showExpenseDialog}
+        onOpenChange={setShowExpenseDialog}
+        onAddExpense={handleExpenseAdded}
+        initialDate={selectedDate || undefined}
+      />
     </Dialog>
   );
 };

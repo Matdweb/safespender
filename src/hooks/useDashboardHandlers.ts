@@ -1,9 +1,11 @@
 import { useToast } from '@/hooks/use-toast';
 import { useCreateTransaction } from '@/hooks/useFinancialData';
+import { useExpenseManager } from '@/hooks/useExpenseManager';
 
 export const useDashboardHandlers = () => {
   const { toast } = useToast();
   const createTransactionMutation = useCreateTransaction();
+  const { addExpense } = useExpenseManager();
 
   const handleAddIncome = async (income: any) => {
     try {
@@ -27,28 +29,15 @@ export const useDashboardHandlers = () => {
     }
   };
 
-  const handleAddExpense = async (expense: any) => {
-    try {
-      await createTransactionMutation.mutateAsync({
-        type: 'expense',
-        amount: expense.amount,
-        description: expense.description,
-        date: expense.date,
-        category: expense.category,
-        is_reserved: expense.isReserved,
-      });
-      
-      toast({
-        title: "Expense Recorded",
-        description: `$${expense.amount.toLocaleString()} ${expense.category} expense added`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add expense",
-        variant: "destructive"
-      });
-    }
+  const handleAddExpense = async (expense: {
+    title: string;
+    category: string;
+    amount: number;
+    type: 'one-time' | 'monthly';
+    date?: string;
+    day_of_month?: number;
+  }) => {
+    await addExpense(expense);
   };
 
   const handleAddSavings = async (savings: { goalId: string; amount: number; description: string }) => {
