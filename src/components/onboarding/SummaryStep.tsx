@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   useCreateFinancialProfile,
+  useCreateSalaryConfiguration,
   useCreateExpense,
   useCreateSavingsGoal
 } from '@/hooks/useFinancialData';
-import { useCreateSalary } from '@/hooks/useSalary';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { toast } from 'sonner';
 import { useFeatureTour } from '@/hooks/useFeatureTour';
@@ -24,7 +24,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
   const { user } = useAuth();
   const { startTour } = useFeatureTour();
   const createFinancialProfile = useCreateFinancialProfile();
-  const createSalary = useCreateSalary();
+  const createSalaryConfiguration = useCreateSalaryConfiguration();
   const createExpense = useCreateExpense();
   const createSavingsGoal = useCreateSavingsGoal();
 
@@ -46,20 +46,19 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
         });
       }
 
-      // 2. Create salary if provided
+      // 2. Create salary configuration if provided
       if (data.salary) {
-        console.log('💰 Creating salary:', data.salary);
-        // Convert old salary format to new format
-        const schedule = data.salary.frequency === 'quarterly' ? 'monthly' : data.salary.frequency;
-        const payDates = data.salary.daysOfMonth || [1];
-        const paychecks = data.salary.quarterlyAmounts ? 
-          data.salary.quarterlyAmounts.map((q: any) => q.amount) : [0];
-        
-        await createSalary.mutateAsync({
-          schedule: schedule as 'monthly' | 'biweekly' | 'yearly',
-          pay_dates: payDates,
-          paychecks: paychecks,
-        });
+        console.log('💰 Creating new salary:', data.salary);
+
+        const salaryInserts = {
+          user_id: user.id,
+          payment_schedule: data.salary.frequency,      // e.g. 'monthly', 'bi-weekly'
+          payment_days: data.salary.daysOfMonth,        // e.g. [15, 30]
+          paychecks: data.salary.quarterlyAmounts.map(q => q.amount),  // Just the amounts
+          created_at: new Date().toISOString()
+        };
+
+        await createSalary.mutateAsync(salaryInserts);
       }
 
       // 3. Create expenses if provided
@@ -112,7 +111,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
 
   const isLoading = 
     createFinancialProfile.isPending || 
-    createSalary.isPending || 
+    createSalaryConfiguration.isPending || 
     createExpense.isPending || 
     createSavingsGoal.isPending;
 
@@ -133,9 +132,9 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
           <br />
           <strong>Pay Days:</strong> {data.salary.daysOfMonth.join(', ')}
           <br />
-          <strong>Amounts:</strong>
+          <strong>Quarterly Amounts:</strong>
           <ul>
-            {data.salary.quarterlyAmounts.map((q: any, index: number) => (
+            {data.salary.quarterlyAmounts.map((q, index) => (
               <li key={index}>
                 {q.quarter}: {formatCurrency(q.amount, data.currency || 'USD')}
               </li>

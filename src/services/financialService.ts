@@ -4,7 +4,7 @@ import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/type
 import { generateRecurringExpenses, RecurringExpense } from '@/hooks/useRecurringExpenses';
 
 export type FinancialProfile = Tables<'financial_profiles'>;
-export type SalaryData = Tables<'salary'>;
+export type SalaryConfiguration = Tables<'salary_configurations'>;
 export type Expense = Tables<'expenses'>;
 export type SavingsGoal = Tables<'savings_goals'>;
 export type Transaction = Tables<'transactions'>;
@@ -42,7 +42,38 @@ export const updateFinancialProfile = async (updates: TablesUpdate<'financial_pr
   return data;
 };
 
-// Note: Salary operations moved to dedicated salaryService.ts
+// New Salary Operations
+export const createSalary = async (salary: TablesInsert<'salaries'>) => {
+  const { data, error } = await supabase
+    .from('salaries')
+    .insert(salary)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getSalary = async () => {
+  const { data, error } = await supabase
+    .from('salaries')
+    .select('*')
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+};
+
+export const updateSalary = async (updates: TablesUpdate<'salaries'>) => {
+  const { data, error } = await supabase
+    .from('salaries')
+    .update(updates)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
 
 // Expenses Operations
 export const createExpense = async (expense: TablesInsert<'expenses'>) => {
