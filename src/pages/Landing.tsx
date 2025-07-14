@@ -162,7 +162,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 md:min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Clock className="w-6 h-6 text-primary" />
                   </div>
                   <div>
@@ -174,7 +174,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 md:min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 min-w-12 bg-primary/10 rounded-lg flex items-center justify-center">
                     <CheckCircle className="w-6 h-6 text-primary" />
                   </div>
                   <div>
