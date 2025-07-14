@@ -1,13 +1,14 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { CalendarItem, DayData } from '@/types/calendar';
+import { DayData } from '@/types/calendar';
 import DayCell from './DayCell';
+import { CalendarTransaction } from '@/hooks/useSimplifiedCalendar';
 
 interface CalendarViewProps {
   currentDate: Date;
-  items: CalendarItem[];
+  items: CalendarTransaction[];
   onDateClick: (date: Date) => void;
-  getItemsForDate: (date: Date) => CalendarItem[];
+  getItemsForDate: (date: Date) => CalendarTransaction[];
 }
 
 const CalendarView = ({ currentDate, items, onDateClick, getItemsForDate }: CalendarViewProps) => {

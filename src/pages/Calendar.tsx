@@ -7,7 +7,7 @@ import AddItemModal from '@/components/calendar/AddItemModal';
 import ViewDayModal from '@/components/calendar/ViewDayModal';
 import LoadingScreen from '@/components/LoadingScreen';
 import { CalendarItem } from '@/types/calendar';
-import { useCalendarData } from '@/hooks/useCalendarData';
+import { useSimplifiedCalendar } from '@/hooks/useSimplifiedCalendar';
 import { useCreateTransaction, useDeleteTransaction } from '@/hooks/useFinancialData';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,7 +18,7 @@ const Calendar = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
 
-  const { calendarItems, getItemsForDate, isLoading } = useCalendarData(currentDate);
+  const { calendarItems, getItemsForDate, isLoading } = useSimplifiedCalendar(currentDate);
   const createTransactionMutation = useCreateTransaction();
   const deleteTransactionMutation = useDeleteTransaction();
   const { toast } = useToast();
@@ -128,12 +128,12 @@ const Calendar = () => {
             onAddClick={() => setShowAddModal(true)}
           />
           
-          <CalendarView
-            currentDate={currentDate}
-            items={convertedCalendarItems}
-            onDateClick={handleDateClick}
-            getItemsForDate={convertedGetItemsForDate}
-          />
+           <CalendarView
+             currentDate={currentDate}
+             items={calendarItems}
+             onDateClick={handleDateClick}
+             getItemsForDate={getItemsForDate}
+           />
         </div>
       </main>
 

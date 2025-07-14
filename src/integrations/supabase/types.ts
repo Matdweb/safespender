@@ -92,6 +92,36 @@ export type Database = {
         }
         Relationships: []
       }
+      salary: {
+        Row: {
+          id: string
+          pay_dates: number[]
+          paychecks: number[]
+          schedule: string
+          time_created: string
+          time_updated: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          pay_dates: number[]
+          paychecks: number[]
+          schedule: string
+          time_created?: string
+          time_updated?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          pay_dates?: number[]
+          paychecks?: number[]
+          schedule?: string
+          time_created?: string
+          time_updated?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       salary_configurations: {
         Row: {
           created_at: string

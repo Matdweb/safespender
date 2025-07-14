@@ -17,10 +17,11 @@ interface SavingsGoal {
   current_amount: number;
 }
 
-interface SalaryConfiguration {
-  frequency: string;
-  days_of_month: number[];
-  quarterly_amounts: any;
+interface SalaryData {
+  id: string;
+  schedule: 'monthly' | 'biweekly' | 'yearly';
+  pay_dates: number[];
+  paychecks: number[];
 }
 
 interface UpcomingEvent {
@@ -35,7 +36,7 @@ interface UpcomingEvent {
 export const useUpcomingEvents = (
   transactions: Transaction[] | undefined,
   goals: SavingsGoal[] | undefined,
-  salary: SalaryConfiguration | undefined,
+  salary: SalaryData | undefined,
   generateSalaryTransactions: (startDate: Date, endDate: Date) => any[]
 ): UpcomingEvent[] => {
   return React.useMemo(() => {
@@ -46,7 +47,7 @@ export const useUpcomingEvents = (
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
     
     // Only generate salary transactions if salary data exists
-    if (salary && salary.quarterly_amounts && Array.isArray(salary.quarterly_amounts)) {
+    if (salary && salary.pay_dates && salary.paychecks) {
       const salaryTransactions = generateSalaryTransactions(now, nextMonth);
       events.push(
         ...salaryTransactions.slice(0, 3).map(t => ({

@@ -4,7 +4,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import TourAutoStarter from '@/components/tour/TourAutoStarter';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import DashboardModals from '@/components/dashboard/DashboardModals';
-import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useSimplifiedFinancialDashboard } from '@/hooks/useSimplifiedFinancialDashboard';
 import { useDashboardHandlers } from '@/hooks/useDashboardHandlers';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 
@@ -36,7 +36,7 @@ const Index = () => {
     freeToSpend,
     generateSalaryTransactions,
     isLoading
-  } = useFinancialDashboard();
+  } = useSimplifiedFinancialDashboard();
 
   const { handleAddIncome, handleAddExpense, handleAddSavings } = useDashboardHandlers();
   
