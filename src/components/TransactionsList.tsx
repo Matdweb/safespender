@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, DollarSign, TrendingDown, ArrowUpCircle, PiggyBank } from 'lucide-react';
 import { useDeleteTransaction } from '@/hooks/useFinancialData';
 import { formatCurrency } from '@/utils/currencyUtils';
-import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useFinancial } from '@/contexts/FinancialContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
@@ -25,7 +25,7 @@ interface TransactionsListProps {
 }
 
 const TransactionsList = ({ transactions }: TransactionsListProps) => {
-  const { currency } = useFinancialDashboard();
+  const { currency } = useFinancial();
   const deleteTransactionMutation = useDeleteTransaction();
   const { toast } = useToast();
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp, AlertTriangle, Clock, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyUtils';
-import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useFinancial } from '@/contexts/FinancialContext';
 import EnhancedBorrowModal from './EnhancedBorrowModal';
 
 interface FreeToSpendCardProps {
@@ -16,13 +16,9 @@ interface FreeToSpendCardProps {
 }
 
 const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }: FreeToSpendCardProps) => {
-  const { currency, convertCurrency, pendingExpenses, transactions, nextIncomeAmount, nextIncomeDate } = useFinancialDashboard();
+  const { currency, convertCurrency } = useFinancial();
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [displayCurrency, setDisplayCurrency] = useState(currency);
-
-  const totalBorrowed = transactions
-    ?.filter(t => t.type === 'income' && t.category === 'advance')
-    .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
 
   const isLow = amount < 100;
   const isVeryLow = amount < 50;
@@ -105,29 +101,6 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
             <span className="font-medium">-{formatAmount(assignedSavings)}</span>
           </div>
 
-          {pendingExpenses > 0 && (
-            <div className="flex justify-between text-orange-200">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Pending Expenses
-              </span>
-              <span className="font-medium">{formatAmount(pendingExpenses)}</span>
-            </div>
-          )}
-
-          {totalBorrowed > 0 && (
-            <div className="flex justify-between text-blue-200">
-              <span>Previously Borrowed</span>
-              <span className="font-medium">+{formatAmount(totalBorrowed)}</span>
-            </div>
-          )}
-
-          {nextIncomeAmount > 0 && nextIncomeDate && (
-            <div className="flex justify-between text-green-200">
-              <span>Next Income ({nextIncomeDate.toLocaleDateString()})</span>
-              <span className="font-medium">+{formatAmount(nextIncomeAmount)}</span>
-            </div>
-          )}
 
           <div className="border-t border-white/20 pt-3 flex justify-between font-semibold text-white">
             <span>Available to Spend</span>

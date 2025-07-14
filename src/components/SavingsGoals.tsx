@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Target, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/currencyUtils';
-import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useFinancial } from '@/contexts/FinancialContext';
 
 interface Goal {
   id: string;
@@ -22,7 +22,7 @@ interface SavingsGoalsProps {
 }
 
 const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
-  const { currency } = useFinancialDashboard();
+  const { currency } = useFinancial();
 
   return (
     <Card className="p-6 card-border">

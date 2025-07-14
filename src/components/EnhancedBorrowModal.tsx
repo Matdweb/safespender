@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, DollarSign, PiggyBank, Calendar, Target } from 'lucide-react';
-import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useSimplifiedFinancialDashboard } from '@/hooks/useSimplifiedFinancialDashboard';
 import { useCreateTransaction, useUpdateSavingsGoal } from '@/hooks/useFinancialData';
 import { useToast } from '@/hooks/use-toast';
 import CurrencyDisplay from './CurrencyDisplay';
@@ -24,41 +24,14 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
   const [selectedGoalId, setSelectedGoalId] = useState('');
   
   const { 
-    nextIncomeAmount, 
-    nextIncomeDate, 
-    pendingExpenses,
-    goals
-  } = useFinancialDashboard();
+    goals = []
+  } = useSimplifiedFinancialDashboard();
   const createTransactionMutation = useCreateTransaction();
   const updateSavingsGoalMutation = useUpdateSavingsGoal();
   const { toast } = useToast();
   
-  // Calculate upcoming savings until next income
-  const upcomingSavings = goals
-    ?.filter(goal => goal.recurring_contribution && parseFloat(goal.recurring_contribution.toString()) > 0)
-    .reduce((sum, goal) => {
-      if (!nextIncomeDate) return sum;
-      const today = new Date();
-      const daysBetween = Math.ceil((nextIncomeDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      let contributions = 0;
-      switch (goal.contribution_frequency) {
-        case 'weekly':
-          contributions = Math.floor(daysBetween / 7);
-          break;
-        case 'biweekly':
-          contributions = Math.floor(daysBetween / 14);
-          break;
-        case 'monthly':
-          contributions = Math.floor(daysBetween / 30);
-          break;
-      }
-      
-      return sum + (contributions * parseFloat(goal.recurring_contribution.toString()));
-    }, 0) || 0;
-
-  const availableAfterObligations = Math.max(0, nextIncomeAmount - pendingExpenses - upcomingSavings);
-  const maxAdvanceAmount = Math.floor(availableAfterObligations * 0.8);
+  // Simplified advance logic for now
+  const maxAdvanceAmount = 500; // Default max advance amount
   
   // Calculate total savings available for withdrawal
   const totalSavingsAvailable = goals?.reduce((sum, goal) => sum + parseFloat(goal.current_amount.toString()), 0) || 0;
@@ -210,11 +183,6 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
                 <p className="text-sm text-blue-800 dark:text-blue-200">
                   Get money now from your next programmed salary. This will reduce your next paycheck accordingly.
                 </p>
-                {nextIncomeDate && (
-                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
-                    Next salary: {nextIncomeDate.toLocaleDateString()}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -253,27 +221,15 @@ const EnhancedBorrowModal = ({ open, onOpenChange }: EnhancedBorrowModalProps) =
               </div>
 
               <div className="bg-muted/50 p-3 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Next Salary:</span>
-                  <span className="font-medium"><CurrencyDisplay amount={nextIncomeAmount} className="inline" /></span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>- Upcoming Bills:</span>
-                  <span><CurrencyDisplay amount={pendingExpenses} className="inline" /></span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>- Upcoming Savings:</span>
-                  <span><CurrencyDisplay amount={upcomingSavings} className="inline" /></span>
-                </div>
-                <div className="border-t pt-2 flex justify-between text-sm font-medium">
-                  <span>Available to Advance:</span>
-                  <span><CurrencyDisplay amount={availableAfterObligations} className="inline" /></span>
+                <div className="flex justify-between text-sm font-medium">
+                  <span>Maximum Advance:</span>
+                  <span><CurrencyDisplay amount={maxAdvanceAmount} className="inline" /></span>
                 </div>
                 {parseFloat(advanceAmount) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>After Advance:</span>
+                    <span>Advance Amount:</span>
                     <span className="font-medium">
-                      <CurrencyDisplay amount={availableAfterObligations - (parseFloat(advanceAmount) || 0)} className="inline" />
+                      <CurrencyDisplay amount={parseFloat(advanceAmount) || 0} className="inline" />
                     </span>
                   </div>
                 )}
