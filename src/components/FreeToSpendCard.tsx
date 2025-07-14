@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp, AlertTriangle, Clock, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyUtils';
-import { useFinancial } from '@/contexts/FinancialContext';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 import EnhancedBorrowModal from './EnhancedBorrowModal';
 
 interface FreeToSpendCardProps {
@@ -16,7 +16,7 @@ interface FreeToSpendCardProps {
 }
 
 const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }: FreeToSpendCardProps) => {
-  const { currency, convertCurrency } = useFinancial();
+  const { currency, convertCurrency } = useFinancialDashboard();
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [displayCurrency, setDisplayCurrency] = useState(currency);
 
@@ -100,7 +100,6 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
             <span>Assigned Savings</span>
             <span className="font-medium">-{formatAmount(assignedSavings)}</span>
           </div>
-
 
           <div className="border-t border-white/20 pt-3 flex justify-between font-semibold text-white">
             <span>Available to Spend</span>

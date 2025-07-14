@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import LoadingScreen from '@/components/LoadingScreen';
 import TourAutoStarter from '@/components/tour/TourAutoStarter';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import DashboardModals from '@/components/dashboard/DashboardModals';
-import { useSimplifiedFinancialDashboard } from '@/hooks/useSimplifiedFinancialDashboard';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 import { useDashboardHandlers } from '@/hooks/useDashboardHandlers';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 
@@ -36,7 +37,7 @@ const Index = () => {
     freeToSpend,
     generateSalaryTransactions,
     isLoading
-  } = useSimplifiedFinancialDashboard();
+  } = useFinancialDashboard();
 
   const { handleAddIncome, handleAddExpense, handleAddSavings } = useDashboardHandlers();
   
