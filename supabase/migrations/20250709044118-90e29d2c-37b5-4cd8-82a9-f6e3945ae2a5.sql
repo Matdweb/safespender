@@ -9,17 +9,6 @@ CREATE TABLE public.financial_profiles (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Create salary_configurations table
-CREATE TABLE public.salary_configurations (
-  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users NOT NULL UNIQUE,
-  frequency TEXT NOT NULL CHECK (frequency IN ('weekly', 'biweekly', 'monthly', 'yearly')),
-  days_of_month INTEGER[] NOT NULL,
-  quarterly_amounts JSONB NOT NULL, -- Array of {quarter: string, amount: number}
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
 -- Create expenses table
 CREATE TABLE public.expenses (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
