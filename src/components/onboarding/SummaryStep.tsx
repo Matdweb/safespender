@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   useCreateFinancialProfile,
-  useCreateSalaryConfiguration,
   useCreateExpense,
   useCreateSavingsGoal
 } from '@/hooks/useFinancialData';
+import { useCreateSalary } from '@/hooks/useSalary';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { toast } from 'sonner';
 import { useFeatureTour } from '@/hooks/useFeatureTour';
@@ -24,7 +24,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
   const { user } = useAuth();
   const { startTour } = useFeatureTour();
   const createFinancialProfile = useCreateFinancialProfile();
-  const createSalaryConfiguration = useCreateSalaryConfiguration();
+  const createSalary = useCreateSalary();
   const createExpense = useCreateExpense();
   const createSavingsGoal = useCreateSavingsGoal();
 
@@ -46,13 +46,19 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
         });
       }
 
-      // 2. Create salary configuration if provided
+      // 2. Create salary if provided
       if (data.salary) {
-        console.log('💰 Creating salary configuration:', data.salary);
-        await createSalaryConfiguration.mutateAsync({
-          frequency: data.salary.frequency,
-          days_of_month: data.salary.daysOfMonth,
-          quarterly_amounts: data.salary.quarterlyAmounts,
+        console.log('💰 Creating salary:', data.salary);
+        // Convert old salary format to new format
+        const schedule = data.salary.frequency === 'quarterly' ? 'monthly' : data.salary.frequency;
+        const payDates = data.salary.daysOfMonth || [1];
+        const paychecks = data.salary.quarterlyAmounts ? 
+          Object.values(data.salary.quarterlyAmounts as Record<string, number>) : [0];
+        
+        await createSalary.mutateAsync({
+          schedule: schedule as 'monthly' | 'biweekly' | 'yearly',
+          pay_dates: payDates,
+          paychecks: paychecks,
         });
       }
 
@@ -106,7 +112,7 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
 
   const isLoading = 
     createFinancialProfile.isPending || 
-    createSalaryConfiguration.isPending || 
+    createSalary.isPending || 
     createExpense.isPending || 
     createSavingsGoal.isPending;
 

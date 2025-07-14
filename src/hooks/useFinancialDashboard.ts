@@ -1,11 +1,12 @@
 
-import { useFinancialProfile, useSalaryConfiguration, useExpenses, useSavingsGoals, useTransactions } from './useFinancialData';
+import { useFinancialProfile, useExpenses, useSavingsGoals, useTransactions } from './useFinancialData';
+import { useSalary } from './useSalary';
 import { useFinancialCalculations } from './useFinancialCalculations';
 import { useSalaryTransactions } from './useSalaryTransactions';
 
 export const useFinancialDashboard = () => {
   const { data: profile, isLoading: isLoadingProfile } = useFinancialProfile();
-  const { data: salary, isLoading: isLoadingSalary } = useSalaryConfiguration();
+  const { data: salary, isLoading: isLoadingSalary } = useSalary();
   const { data: expenses, isLoading: isLoadingExpenses } = useExpenses();
   const { data: goals, isLoading: isLoadingGoals } = useSavingsGoals();
   const { data: transactions, isLoading: isLoadingTransactions } = useTransactions();

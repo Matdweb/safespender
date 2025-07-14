@@ -30,11 +30,7 @@ interface FinancialProfile {
   base_currency: string;
 }
 
-interface SalaryConfiguration {
-  frequency: string;
-  days_of_month: number[];
-  quarterly_amounts: any;
-}
+import { SalaryData } from '@/services/salaryService';
 
 interface FinancialCalculations {
   totalIncome: number;
@@ -52,7 +48,7 @@ export const useFinancialCalculations = (
   expenses: Expense[] | undefined,
   goals: SavingsGoal[] | undefined,
   profile: FinancialProfile | undefined,
-  salary: SalaryConfiguration | undefined
+  salary: SalaryData | undefined
 ): FinancialCalculations => {
   const [calculations, setCalculations] = useState<FinancialCalculations>({
     totalIncome: 0,
@@ -117,33 +113,38 @@ export const useFinancialCalculations = (
       let nextIncomeAmount = 0;
       let nextIncomeDate: Date | null = null;
 
-      if (salary && salary.quarterly_amounts && Array.isArray(salary.quarterly_amounts)) {
-        // Calculate average quarterly amount
-        const quarterlyAmounts = salary.quarterly_amounts.map((q: any) => q.amount || 0);
-        const totalQuarterly = quarterlyAmounts.reduce((sum: number, amount: number) => sum + amount, 0);
-        const avgQuarterly = quarterlyAmounts.length > 0 ? totalQuarterly / quarterlyAmounts.length : 0;
+      if (salary && salary.paychecks && salary.paychecks.length > 0) {
+        // Calculate average paycheck amount
+        const totalPaychecks = salary.paychecks.reduce((sum, amount) => sum + amount, 0);
+        const avgPaycheck = totalPaychecks / salary.paychecks.length;
 
-        if (avgQuarterly > 0) {
-          // Convert to payment frequency
-          switch (salary.frequency) {
-            case 'weekly':
-              nextIncomeAmount = avgQuarterly / 13;
-              nextIncomeDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        if (avgPaycheck > 0) {
+          nextIncomeAmount = avgPaycheck;
+          
+          // Find next pay date
+          const today = new Date();
+          const currentMonth = today.getMonth();
+          const currentYear = today.getFullYear();
+          
+          let nextPayDate: Date | null = null;
+          
+          // Check pay dates in current month first
+          for (const payDate of salary.pay_dates) {
+            const candidateDate = new Date(currentYear, currentMonth, payDate);
+            if (candidateDate > today) {
+              nextPayDate = candidateDate;
               break;
-            case 'biweekly':
-              nextIncomeAmount = avgQuarterly / 6.5;
-              nextIncomeDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-              break;
-            case 'monthly':
-              nextIncomeAmount = avgQuarterly / 3;
-              const nextSalaryMonth = new Date(today.getFullYear(), today.getMonth() + 1, salary.days_of_month[0] || 1);
-              nextIncomeDate = nextSalaryMonth;
-              break;
-            case 'yearly':
-              nextIncomeAmount = avgQuarterly * 4;
-              nextIncomeDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-              break;
+            }
           }
+          
+          // If no pay date found in current month, check next month
+          if (!nextPayDate) {
+            const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+            const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+            nextPayDate = new Date(nextMonthYear, nextMonth, salary.pay_dates[0]);
+          }
+          
+          nextIncomeDate = nextPayDate;
         }
       }
 
