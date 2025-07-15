@@ -10,7 +10,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 
 interface SavingsGoalsProps {
-  goals: Tables<'savings_goals'>[];
+  goals: any[]; // Temporary fix for type compatibility
   onAddGoal: () => void;
 }
 
