@@ -205,7 +205,6 @@ const Goals = () => {
       <AddGoalModal
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        onAddGoal={handleAddGoal}
       />
     </div>
   );

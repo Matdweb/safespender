@@ -6,23 +6,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Target, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/currencyUtils';
-import { useFinancial } from '@/contexts/FinancialContext';
-
-interface Goal {
-  id: string;
-  name: string;
-  target_amount: number | string;
-  current_amount: number | string;
-  icon?: string;
-}
+import { Tables } from '@/integrations/supabase/types';
+import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 
 interface SavingsGoalsProps {
-  goals: Goal[];
+  goals: Tables<'savings_goals'>[];
   onAddGoal: () => void;
 }
 
 const SavingsGoals = ({ goals, onAddGoal }: SavingsGoalsProps) => {
-  const { currency } = useFinancial();
+  const { currency } = useFinancialDashboard();
 
   return (
     <Card className="p-6 card-border">

@@ -16,6 +16,11 @@ export const useFinancialDashboard = () => {
   // Use separated calculation and salary transaction hooks
   const calculations = useFinancialCalculations(transactions, expenses, goals, profile, salary);
   const generateSalaryTransactions = useSalaryTransactions(salary);
+  
+  // Calculate total savings balance from goals
+  const totalSavingsBalance = goals?.reduce((sum, goal) => {
+    return sum + parseFloat(goal.current_amount.toString());
+  }, 0) || 0;
 
   return {
     // Data
@@ -50,5 +55,8 @@ export const useFinancialDashboard = () => {
     
     // Currency
     currency: profile?.base_currency || 'USD',
+    
+    // Savings
+    totalSavingsBalance,
   };
 };

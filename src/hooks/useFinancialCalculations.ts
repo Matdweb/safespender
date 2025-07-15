@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useExpenseCalculations } from '@/hooks/useExpenseCalculations';
+import { useSavingsCalculations } from '@/hooks/useSavingsCalculations';
 
 interface Transaction {
   id: string;
@@ -63,6 +64,41 @@ export const useFinancialCalculations = (
     nextIncomeDate: null,
   });
 
+  // Calculate next income date first to use in savings calculations
+  const [nextIncomeDate, setNextIncomeDate] = useState<Date | null>(null);
+  
+  useEffect(() => {
+    if (salary && salary.paychecks && salary.paychecks.length > 0) {
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      
+      let nextPayDate: Date | null = null;
+      
+      // Check pay dates in current month first
+      for (const payDate of salary.pay_dates) {
+        const candidateDate = new Date(currentYear, currentMonth, payDate);
+        if (candidateDate > today) {
+          nextPayDate = candidateDate;
+          break;
+        }
+      }
+      
+      // If no pay date found in current month, check next month
+      if (!nextPayDate) {
+        const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+        const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+        nextPayDate = new Date(nextMonthYear, nextMonth, salary.pay_dates[0]);
+      }
+      
+      setNextIncomeDate(nextPayDate);
+    } else {
+      setNextIncomeDate(null);
+    }
+  }, [salary]);
+
+  const savingsCalc = useSavingsCalculations(nextIncomeDate);
+
   useEffect(() => {
     const calculateFinancials = async () => {
       if (!transactions || !expenses || !goals || !profile) {
@@ -70,8 +106,6 @@ export const useFinancialCalculations = (
       }
 
       const today = new Date();
-      const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       
       // Calculate totals from transactions
       const totalIncome = transactions
@@ -82,9 +116,9 @@ export const useFinancialCalculations = (
         .filter(t => t.type === 'expense' && new Date(t.date + 'T00:00:00') <= today)
         .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
 
-      const assignedSavings = transactions
-        .filter(t => t.type === 'savings' && new Date(t.date + 'T00:00:00') <= today)
-        .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+      // Savings are excluded from current balance calculation
+      // Current Balance = Income - Expenses (excluding savings)
+      const currentBalance = totalIncome - totalExpenses;
 
       // Use the new expense calculation system
       const reservedExpenses = newReservedExpenses;
@@ -94,50 +128,21 @@ export const useFinancialCalculations = (
         .filter(t => t.type === 'expense' && new Date(t.date + 'T00:00:00') > today)
         .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
 
-      // Calculate next income amount and date only if salary exists
+      // Calculate next income amount
       let nextIncomeAmount = 0;
-      let nextIncomeDate: Date | null = null;
-
       if (salary && salary.paychecks && salary.paychecks.length > 0) {
-        // Calculate average paycheck amount
         const totalPaychecks = salary.paychecks.reduce((sum, amount) => sum + amount, 0);
-        const avgPaycheck = totalPaychecks / salary.paychecks.length;
-
-        if (avgPaycheck > 0) {
-          nextIncomeAmount = avgPaycheck;
-          
-          // Find next pay date
-          const today = new Date();
-          const currentMonth = today.getMonth();
-          const currentYear = today.getFullYear();
-          
-          let nextPayDate: Date | null = null;
-          
-          // Check pay dates in current month first
-          for (const payDate of salary.pay_dates) {
-            const candidateDate = new Date(currentYear, currentMonth, payDate);
-            if (candidateDate > today) {
-              nextPayDate = candidateDate;
-              break;
-            }
-          }
-          
-          // If no pay date found in current month, check next month
-          if (!nextPayDate) {
-            const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-            const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-            nextPayDate = new Date(nextMonthYear, nextMonth, salary.pay_dates[0]);
-          }
-          
-          nextIncomeDate = nextPayDate;
-        }
+        nextIncomeAmount = totalPaychecks / salary.paychecks.length;
       }
 
-      // Calculate free to spend (current balance minus reserved expenses and assigned savings)
-      const freeToSpend = Math.max(0, totalIncome - totalExpenses - assignedSavings - reservedExpenses - pendingExpenses);
+      // Assigned Savings = upcoming programmed contributions until next income
+      const assignedSavings = savingsCalc.assignedToSavings;
+
+      // Free to spend = Current Balance - Reserved Expenses - Assigned Savings - Pending Expenses
+      const freeToSpend = Math.max(0, currentBalance - reservedExpenses - assignedSavings - pendingExpenses);
 
       setCalculations({
-        totalIncome,
+        totalIncome: currentBalance, // This represents current balance (income - expenses, excluding savings)
         totalExpenses,
         reservedExpenses,
         assignedSavings,
@@ -149,7 +154,7 @@ export const useFinancialCalculations = (
     };
 
     calculateFinancials();
-  }, [transactions, expenses, goals, profile, salary, newReservedExpenses]);
+  }, [transactions, expenses, goals, profile, salary, newReservedExpenses, savingsCalc.assignedToSavings, nextIncomeDate]);
 
   return calculations;
 };

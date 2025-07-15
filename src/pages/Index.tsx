@@ -104,7 +104,6 @@ const Index = () => {
         setShowSalaryModal={setShowSalaryModal}
         onAddIncome={handleAddIncome}
         onAddExpense={handleAddExpense}
-        onAddSavings={handleAddSavings}
       />
     </div>
   );

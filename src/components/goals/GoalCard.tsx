@@ -4,11 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Edit, Trash2, TrendingUp } from 'lucide-react';
 import EditGoalModal from './EditGoalModal';
-import { Goal } from '@/contexts/FinancialContext';
+import { Tables } from '@/integrations/supabase/types';
+
+interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  recurringContribution: number;
+  contributionFrequency?: 'weekly' | 'biweekly' | 'monthly';
+  icon?: string;
+}
 
 interface GoalCardProps {
   goal: Goal;
-  onUpdate: (goal: Goal) => void;
+  onUpdate: (goal: any) => void;
   onDelete: (goalId: string) => void;
 }
 
@@ -115,8 +125,18 @@ const GoalCard = ({ goal, onUpdate, onDelete }: GoalCardProps) => {
       <EditGoalModal
         open={showEditModal}
         onOpenChange={setShowEditModal}
-        goal={goal}
-        onUpdateGoal={onUpdate}
+        goal={{
+          id: goal.id,
+          name: goal.name,
+          target_amount: goal.targetAmount,
+          current_amount: goal.currentAmount,
+          recurring_contribution: goal.recurringContribution,
+          contribution_frequency: goal.contributionFrequency || null,
+          icon: goal.icon || '💰',
+          user_id: '',
+          created_at: '',
+          updated_at: ''
+        }}
       />
     </>
   );

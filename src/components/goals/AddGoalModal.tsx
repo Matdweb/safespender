@@ -3,52 +3,64 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Goal } from '@/contexts/FinancialContext';
+import { useCreateSavingsGoal } from '@/hooks/useFinancialData';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddGoalModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;
 }
 
 const goalIcons = ['💰', '🏠', '🚗', '🏖️', '🎓', '💍', '🛡️', '📱', '🎯', '🌟'];
 
-const AddGoalModal = ({ open, onOpenChange, onAddGoal }: AddGoalModalProps) => {
+const AddGoalModal = ({ open, onOpenChange }: AddGoalModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
     currentAmount: '',
     recurringContribution: '',
-    contributionFrequency: 'monthly' as 'weekly' | 'monthly',
     icon: '💰'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createGoalMutation = useCreateSavingsGoal();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.targetAmount) return;
 
-    onAddGoal({
-      name: formData.name,
-      targetAmount: parseFloat(formData.targetAmount),
-      currentAmount: parseFloat(formData.currentAmount) || 0,
-      recurringContribution: parseFloat(formData.recurringContribution) || 0,
-      contributionFrequency: formData.contributionFrequency,
-      icon: formData.icon
-    });
+    try {
+      await createGoalMutation.mutateAsync({
+        name: formData.name,
+        target_amount: parseFloat(formData.targetAmount),
+        current_amount: parseFloat(formData.currentAmount) || 0,
+        recurring_contribution: parseFloat(formData.recurringContribution) || 0,
+        icon: formData.icon
+      });
 
-    // Reset form
-    setFormData({
-      name: '',
-      targetAmount: '',
-      currentAmount: '',
-      recurringContribution: '',
-      contributionFrequency: 'monthly',
-      icon: '💰'
-    });
-    
-    onOpenChange(false);
+      toast({
+        title: "Goal Created!",
+        description: `${formData.name} goal has been created successfully.`,
+      });
+
+      // Reset form
+      setFormData({
+        name: '',
+        targetAmount: '',
+        currentAmount: '',
+        recurringContribution: '',
+        icon: '💰'
+      });
+      
+      onOpenChange(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create goal",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -113,31 +125,17 @@ const AddGoalModal = ({ open, onOpenChange, onAddGoal }: AddGoalModalProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recurringContribution">Regular Contribution</Label>
-            <div className="flex gap-2">
-              <Input
-                id="recurringContribution"
-                type="number"
-                placeholder="200"
-                value={formData.recurringContribution}
-                onChange={(e) => setFormData(prev => ({ ...prev, recurringContribution: e.target.value }))}
-                className="flex-1"
-              />
-              <Select
-                value={formData.contributionFrequency}
-                onValueChange={(value: 'weekly' | 'monthly') => 
-                  setFormData(prev => ({ ...prev, contributionFrequency: value }))
-                }
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Label htmlFor="recurringContribution">Monthly Contribution</Label>
+            <Input
+              id="recurringContribution"
+              type="number"
+              placeholder="200"
+              value={formData.recurringContribution}
+              onChange={(e) => setFormData(prev => ({ ...prev, recurringContribution: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Contributions are automatically scheduled for the 16th of each month
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -152,8 +150,9 @@ const AddGoalModal = ({ open, onOpenChange, onAddGoal }: AddGoalModalProps) => {
             <Button 
               type="submit"
               className="flex-1 bg-primary hover:bg-primary/90"
+              disabled={createGoalMutation.isPending}
             >
-              Create Goal
+              {createGoalMutation.isPending ? 'Creating...' : 'Create Goal'}
             </Button>
           </div>
         </form>

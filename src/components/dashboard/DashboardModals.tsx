@@ -1,7 +1,7 @@
 import React from 'react';
 import AddIncomeDialog from '@/components/AddIncomeDialog';
 import UnifiedExpenseDialog from '@/components/UnifiedExpenseDialog';
-import AddSavingsDialog from '@/components/AddSavingsDialog';
+import ExtraContributionDialog from '@/components/ExtraContributionDialog';
 import SetSalaryModal from '@/components/SetSalaryModal';
 
 interface DashboardModalsProps {
@@ -22,7 +22,7 @@ interface DashboardModalsProps {
     date?: string;
     day_of_month?: number;
   }) => Promise<void>;
-  onAddSavings: (savings: any) => Promise<void>;
+  
 }
 
 const DashboardModals = ({
@@ -36,7 +36,6 @@ const DashboardModals = ({
   setShowSalaryModal,
   onAddIncome,
   onAddExpense,
-  onAddSavings,
 }: DashboardModalsProps) => {
   return (
     <>
@@ -52,10 +51,9 @@ const DashboardModals = ({
         onAddExpense={onAddExpense}
       />
 
-      <AddSavingsDialog
+      <ExtraContributionDialog
         open={showSavingsDialog}
         onOpenChange={setShowSavingsDialog}
-        onAddSavings={onAddSavings}
       />
 
       <SetSalaryModal

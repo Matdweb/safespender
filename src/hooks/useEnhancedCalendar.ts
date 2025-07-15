@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTransactions } from './useFinancialData';
 import { useSalary } from './useSalary';
 import { useCalendarExpenses } from './useCalendarExpenses';
+import { useSavingsCalendar } from './useSavingsCalendar';
 import { generateSalaryTransactions } from '@/services/salaryService';
 
 export interface CalendarTransaction {
@@ -12,7 +13,7 @@ export interface CalendarTransaction {
   date: string;
   category?: string;
   description: string;
-  source: 'transaction' | 'expense' | 'salary';
+  source: 'transaction' | 'expense' | 'salary' | 'savings';
 }
 
 export const useEnhancedCalendar = (currentDate: Date) => {
@@ -29,6 +30,12 @@ export const useEnhancedCalendar = (currentDate: Date) => {
   const expensesPrevMonth = useCalendarExpenses(startMonth < 0 ? 11 : startMonth, startMonth < 0 ? startYear - 1 : startYear);
   const expensesNextMonth = useCalendarExpenses((currentDate.getMonth() + 1) % 12, currentDate.getMonth() === 11 ? currentDate.getFullYear() + 1 : currentDate.getFullYear());
   const expensesNext2Month = useCalendarExpenses((currentDate.getMonth() + 2) % 12, currentDate.getMonth() >= 10 ? currentDate.getFullYear() + 1 : currentDate.getFullYear());
+
+  // Get savings contributions for calendar months
+  const savingsThisMonth = useSavingsCalendar(currentDate.getMonth(), currentDate.getFullYear());
+  const savingsPrevMonth = useSavingsCalendar(startMonth < 0 ? 11 : startMonth, startMonth < 0 ? startYear - 1 : startYear);
+  const savingsNextMonth = useSavingsCalendar((currentDate.getMonth() + 1) % 12, currentDate.getMonth() === 11 ? currentDate.getFullYear() + 1 : currentDate.getFullYear());
+  const savingsNext2Month = useSavingsCalendar((currentDate.getMonth() + 2) % 12, currentDate.getMonth() >= 10 ? currentDate.getFullYear() + 1 : currentDate.getFullYear());
 
   const calendarItems = useMemo(() => {
     // Get calendar view range
@@ -96,8 +103,29 @@ export const useEnhancedCalendar = (currentDate: Date) => {
 
     allItems.push(...expenseItems);
 
+    // Add programmed savings contributions
+    const allSavingsContributions = [
+      ...savingsPrevMonth,
+      ...savingsThisMonth,
+      ...savingsNextMonth,
+      ...savingsNext2Month
+    ];
+
+    const savingsItems = allSavingsContributions.map(contribution => ({
+      id: contribution.id,
+      type: 'savings' as const,
+      title: contribution.title,
+      amount: contribution.amount,
+      date: contribution.date.toISOString().split('T')[0],
+      category: 'savings-contribution',
+      description: contribution.title,
+      source: 'savings' as const,
+    }));
+
+    allItems.push(...savingsItems);
+
     return allItems;
-  }, [transactions, salary, currentDate, expensesPrevMonth, expensesThisMonth, expensesNextMonth, expensesNext2Month]);
+  }, [transactions, salary, currentDate, expensesPrevMonth, expensesThisMonth, expensesNextMonth, expensesNext2Month, savingsPrevMonth, savingsThisMonth, savingsNextMonth, savingsNext2Month]);
 
   const getItemsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
