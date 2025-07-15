@@ -102,26 +102,33 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
         </div>
 
         {/* Enhanced Main Amount with Glow Effect */}
-        <div className="text-center py-4">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-110" />
-            <div className={`relative text-5xl font-black tracking-tight mb-3 transition-all duration-500 ${
-              freeToSpend >= 0 ? 'text-primary' : 'text-destructive'
-            }`}>
-              {formatAmount(freeToSpend)}
-            </div>
-          </div>
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-            freeToSpend <= 0 ? 'bg-destructive/10 text-destructive' :
-            freeToSpend < 100 ? 'bg-orange-500/10 text-orange-600' :
-            'bg-primary/10 text-primary'
-          }`}>
-            {freeToSpend <= 0 && <AlertTriangle className="w-4 h-4" />}
-            {freeToSpend <= 0 && "You're over budget!"}
-            {freeToSpend > 0 && freeToSpend < 100 && "Running low on funds"}
-            {freeToSpend >= 100 && "✨ Available to spend safely"}
-          </div>
-        </div>
+        <div className="py-4 flex flex-col items-center text-center">
+  <div className="relative">
+    <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-110" />
+    <div
+      className={`relative text-4xl sm:text-5xl font-black tracking-tight mb-3 transition-all duration-500 ${
+        freeToSpend >= 0 ? 'text-primary' : 'text-destructive'
+      }`}
+    >
+      {formatAmount(freeToSpend)}
+    </div>
+  </div>
+
+  <div
+    className={`mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+      freeToSpend <= 0
+        ? 'bg-destructive/10 text-destructive'
+        : freeToSpend < 100
+        ? 'bg-orange-500/10 text-orange-600'
+        : 'bg-primary/10 text-primary'
+    }`}
+  >
+    {freeToSpend <= 0 && <AlertTriangle className="w-4 h-4" />}
+    {freeToSpend <= 0 && "You're over budget!"}
+    {freeToSpend > 0 && freeToSpend < 100 && "Running low on funds"}
+    {freeToSpend >= 100 && "✨ Available to spend safely"}
+  </div>
+</div>
 
         {/* Enhanced Breakdown with Better Visual Hierarchy */}
         <div className="relative">
