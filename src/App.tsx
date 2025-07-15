@@ -58,11 +58,7 @@ const AppRoutes = () => {
           element={
             user ? (
               <ProtectedRoute>
-                <FinancialProvider>
-                  <OnboardingChecker>
-                    <Index />
-                  </OnboardingChecker>
-                </FinancialProvider>
+                <Index />
               </ProtectedRoute>
             ) : (
               <Landing />
@@ -74,11 +70,7 @@ const AppRoutes = () => {
           path="/calendar" 
           element={
             <ProtectedRoute>
-              <FinancialProvider>
-                <OnboardingChecker>
-                  <Calendar />
-                </OnboardingChecker>
-              </FinancialProvider>
+              <Calendar />
             </ProtectedRoute>
           } 
         />
@@ -86,11 +78,7 @@ const AppRoutes = () => {
           path="/goals" 
           element={
             <ProtectedRoute>
-              <FinancialProvider>
-                <OnboardingChecker>
-                  <Goals />
-                </OnboardingChecker>
-              </FinancialProvider>
+              <Goals />
             </ProtectedRoute>
           } 
         />
@@ -107,7 +95,11 @@ function App() {
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <AppRoutes />
+            <FinancialProvider>
+              <OnboardingChecker>
+                <AppRoutes />
+              </OnboardingChecker>
+            </FinancialProvider>
             <Toaster />
           </AuthProvider>
         </BrowserRouter>
