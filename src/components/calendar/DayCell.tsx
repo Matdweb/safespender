@@ -13,7 +13,7 @@ interface DayCellProps {
 
 const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
   const adjustedDate = new Date(dayData.date);
-  adjustedDate.setDate(adjustedDate.getDate() + 1);
+  adjustedDate.setDate(adjustedDate.getDate());
   const { items, netFlow, isToday, isPast } = dayData;
 
   const [isHovered, setIsHovered] = useState(false);
