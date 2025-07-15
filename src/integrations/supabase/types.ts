@@ -69,6 +69,7 @@ export type Database = {
         Row: {
           base_currency: string
           created_at: string
+          has_completed_feature_tour: boolean
           id: string
           start_date: string
           updated_at: string
@@ -77,6 +78,7 @@ export type Database = {
         Insert: {
           base_currency?: string
           created_at?: string
+          has_completed_feature_tour?: boolean
           id?: string
           start_date?: string
           updated_at?: string
@@ -85,6 +87,7 @@ export type Database = {
         Update: {
           base_currency?: string
           created_at?: string
+          has_completed_feature_tour?: boolean
           id?: string
           start_date?: string
           updated_at?: string

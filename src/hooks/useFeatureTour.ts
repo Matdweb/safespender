@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useFinancialProfile, useUpdateFinancialProfile } from '@/hooks/useFinancialData';
 
 export interface TourStep {
   id: string;
@@ -67,17 +68,14 @@ const tourSteps: TourStep[] = [
 export const useFeatureTour = () => {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [hasSeenTour, setHasSeenTour] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    // Check if user has seen the tour
-    const tourCompleted = localStorage.getItem('safespender-tour-completed');
-    if (tourCompleted === 'true') {
-      setHasSeenTour(true);
-    }
-  }, []);
+  
+  const { data: financialProfile } = useFinancialProfile();
+  const updateFinancialProfile = useUpdateFinancialProfile();
+  
+  // Get hasSeenTour from Supabase profile
+  const hasSeenTour = financialProfile?.has_completed_feature_tour || false;
 
   const startTour = () => {
     setIsActive(true);
@@ -118,23 +116,43 @@ export const useFeatureTour = () => {
     }
   };
 
-  const skipTour = () => {
+  const skipTour = async () => {
     setIsActive(false);
     setCurrentStep(0);
-    localStorage.setItem('safespender-tour-completed', 'true');
-    setHasSeenTour(true);
+    
+    // Update profile in Supabase
+    try {
+      await updateFinancialProfile.mutateAsync({
+        has_completed_feature_tour: true
+      });
+    } catch (error) {
+      console.error('Error updating tour completion status:', error);
+    }
   };
 
-  const completeTour = () => {
+  const completeTour = async () => {
     setIsActive(false);
     setCurrentStep(0);
-    localStorage.setItem('safespender-tour-completed', 'true');
-    setHasSeenTour(true);
+    
+    // Update profile in Supabase
+    try {
+      await updateFinancialProfile.mutateAsync({
+        has_completed_feature_tour: true
+      });
+    } catch (error) {
+      console.error('Error updating tour completion status:', error);
+    }
   };
 
-  const resetTour = () => {
-    localStorage.removeItem('safespender-tour-completed');
-    setHasSeenTour(false);
+  const resetTour = async () => {
+    // Reset tour completion status in Supabase
+    try {
+      await updateFinancialProfile.mutateAsync({
+        has_completed_feature_tour: false
+      });
+    } catch (error) {
+      console.error('Error resetting tour completion status:', error);
+    }
   };
 
   const currentTourStep = tourSteps[currentStep];

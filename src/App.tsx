@@ -32,9 +32,8 @@ const OnboardingChecker = ({ children }: { children: React.ReactNode }) => {
       <OnboardingFlow
         open={true}
         onComplete={() => {
-          // Mark that tour should start after onboarding
-          localStorage.setItem('safespender-start-tour-after-onboarding', 'true');
-          window.location.reload(); // Refresh to update the context
+          // Onboarding completion is handled by SummaryStep
+          // No page reload needed anymore
         }}
       />
     );
