@@ -82,6 +82,7 @@ export const useCreateExpense = () => {
       createExpense({ ...expense, user_id: user!.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 };
@@ -176,6 +177,7 @@ export const useCreateTransaction = () => {
       createTransaction({ ...transaction, user_id: user!.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
     },
   });
 };

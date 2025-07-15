@@ -1,5 +1,5 @@
 import { useToast } from '@/hooks/use-toast';
-import { useCreateExpense } from '@/hooks/useFinancialData';
+import { useCreateExpense, useCreateTransaction } from '@/hooks/useFinancialData';
 
 interface NewExpense {
   title: string;
@@ -13,6 +13,7 @@ interface NewExpense {
 export const useExpenseManager = () => {
   const { toast } = useToast();
   const createExpenseMutation = useCreateExpense();
+  const createTransactionMutation = useCreateTransaction();
 
   const addExpense = async (expense: NewExpense) => {
     try {
@@ -42,7 +43,53 @@ export const useExpenseManager = () => {
         )
       };
 
+      // Create the expense record
       await createExpenseMutation.mutateAsync(expenseData);
+      
+      // For one-time expenses that are today or in the past, also create a transaction record
+      if (expense.type === 'one-time' && expense.date) {
+        const expenseDate = new Date(expense.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        expenseDate.setHours(0, 0, 0, 0);
+        
+        if (expenseDate <= today) {
+          await createTransactionMutation.mutateAsync({
+            type: 'expense',
+            amount: expense.amount,
+            description: expense.title,
+            date: expense.date,
+            category: expense.category,
+            is_reserved: false
+          });
+        }
+      }
+      
+      // For monthly expenses, create a transaction record if it's due this month
+      if (expense.type === 'monthly' && expense.day_of_month) {
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const expenseDate = new Date(currentYear, currentMonth, expense.day_of_month);
+        
+        // Handle month day overflow
+        if (expenseDate.getDate() !== expense.day_of_month) {
+          expenseDate.setDate(0); // Go to last day of previous month
+        }
+        
+        // If the expense date is today or in the past this month, create transaction
+        if (expenseDate <= today && expenseDate.getMonth() === currentMonth) {
+          const dateStr = expenseDate.toISOString().split('T')[0];
+          await createTransactionMutation.mutateAsync({
+            type: 'expense',
+            amount: expense.amount,
+            description: expense.title,
+            date: dateStr,
+            category: expense.category,
+            is_reserved: true // Monthly expenses are reserved
+          });
+        }
+      }
       
       toast({
         title: "Expense Added!",
@@ -87,6 +134,6 @@ export const useExpenseManager = () => {
 
   return {
     addExpense,
-    isLoading: createExpenseMutation.isPending,
+    isLoading: createExpenseMutation.isPending || createTransactionMutation.isPending,
   };
 };
