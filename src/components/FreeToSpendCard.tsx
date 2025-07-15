@@ -60,24 +60,39 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
   }
 
   return (
-    <Card className="p-6 card-border">
-      <div className="space-y-6">
-        {/* Header */}
+    <Card className="relative overflow-hidden animate-fade-in">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10" />
+      
+      {/* Animated Border Glow */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 opacity-30 animate-pulse rounded-lg" 
+           style={{ padding: '1px' }}>
+        <div className="w-full h-full bg-background rounded-lg" />
+      </div>
+
+      <div className="relative p-6 space-y-6">
+        {/* Enhanced Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-finance-primary" />
-            <h3 className="font-semibold">Free to Spend Today</h3>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full animate-pulse" />
+              <Wallet className="relative w-6 h-6 text-primary animate-scale-in" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg tracking-tight">Free to Spend</h3>
+              <p className="text-xs text-muted-foreground">Real-time calculation</p>
+            </div>
           </div>
           
-          {/* Currency Selector - Desktop */}
+          {/* Enhanced Currency Selector - Desktop */}
           <div className="hidden md:block">
             <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
-              <SelectTrigger className="w-20 h-8 text-xs">
+              <SelectTrigger className="w-24 h-9 border-primary/20 hover:border-primary/40 transition-colors">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
                 {currencies.map((curr) => (
-                  <SelectItem key={curr.code} value={curr.code}>
+                  <SelectItem key={curr.code} value={curr.code} className="hover:bg-primary/10">
                     {curr.code}
                   </SelectItem>
                 ))}
@@ -86,73 +101,105 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
           </div>
         </div>
 
-        {/* Main Amount */}
-        <div className="text-center">
-          <div className="text-4xl font-bold text-finance-primary mb-2 transition-all duration-300">
-            {formatAmount(freeToSpend)}
-          </div>
-          <p className="text-sm text-subtle">
-            {freeToSpend <= 0 && "You're over budget! "}
-            {freeToSpend > 0 && freeToSpend < 100 && "Running low on funds "}
-            {freeToSpend >= 100 && "Available to spend safely"}
-          </p>
-        </div>
-
-        {/* Breakdown */}
-        <div className="space-y-3 bg-muted/30 rounded-lg p-4">
-          <h4 className="font-medium text-sm mb-3">💰 Financial Breakdown</h4>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="text-sm">Income Received</span>
-            </div>
-            <span className="font-medium text-green-600">{formatAmount(totalIncome)}</span>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-red-600" />
-              <span className="text-sm">Reserved for Bills</span>
-            </div>
-            <span className="font-medium text-red-600">-{formatAmount(reservedForBills)}</span>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <PiggyBank className="w-4 h-4 text-blue-600" />
-              <span className="text-sm">Assigned to Savings</span>
-            </div>
-            <span className="font-medium text-blue-600">-{formatAmount(accurateAssignedSavings)}</span>
-          </div>
-
-          <hr className="border-border" />
-          
-          <div className="flex justify-between items-center font-semibold">
-            <span className="text-sm">Free to Spend</span>
-            <span className={`${freeToSpend >= 0 ? 'text-finance-primary' : 'text-red-600'}`}>
+        {/* Enhanced Main Amount with Glow Effect */}
+        <div className="text-center py-4">
+          <div className="relative inline-block">
+            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-110" />
+            <div className={`relative text-5xl font-black tracking-tight mb-3 transition-all duration-500 ${
+              freeToSpend >= 0 ? 'text-primary' : 'text-destructive'
+            }`}>
               {formatAmount(freeToSpend)}
-            </span>
+            </div>
+          </div>
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+            freeToSpend <= 0 ? 'bg-destructive/10 text-destructive' :
+            freeToSpend < 100 ? 'bg-orange-500/10 text-orange-600' :
+            'bg-primary/10 text-primary'
+          }`}>
+            {freeToSpend <= 0 && <AlertTriangle className="w-4 h-4" />}
+            {freeToSpend <= 0 && "You're over budget!"}
+            {freeToSpend > 0 && freeToSpend < 100 && "Running low on funds"}
+            {freeToSpend >= 100 && "✨ Available to spend safely"}
           </div>
         </div>
 
-        {/* Additional Info */}
-        <div className="text-xs text-subtle">
-          {lastSalaryDate && (
-            <p>Last income: {lastSalaryDate.toLocaleDateString()}</p>
-          )}
-          <p>Current balance: {formatAmount(currentBalance)}</p>
+        {/* Enhanced Breakdown with Better Visual Hierarchy */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 rounded-xl" />
+          <div className="relative bg-muted/40 backdrop-blur-sm rounded-xl p-5 space-y-4 border border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm">💰</span>
+              </div>
+              <h4 className="font-semibold text-base">Financial Breakdown</h4>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/5 border border-green-500/10 hover-scale">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                  </div>
+                  <span className="font-medium">Income Received</span>
+                </div>
+                <span className="font-bold text-green-600 text-lg">{formatAmount(totalIncome)}</span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 rounded-lg bg-red-500/5 border border-red-500/10 hover-scale">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <TrendingDown className="w-4 h-4 text-red-600" />
+                  </div>
+                  <span className="font-medium">Reserved for Bills</span>
+                </div>
+                <span className="font-bold text-red-600 text-lg">-{formatAmount(reservedForBills)}</span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/5 border border-blue-500/10 hover-scale">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <PiggyBank className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="font-medium">Assigned to Savings</span>
+                </div>
+                <span className="font-bold text-blue-600 text-lg">-{formatAmount(accurateAssignedSavings)}</span>
+              </div>
+
+              <div className="border-t border-dashed border-border pt-3">
+                <div className="flex justify-between items-center p-4 rounded-xl bg-primary/5 border-2 border-primary/20">
+                  <span className="font-bold text-lg">Free to Spend</span>
+                  <span className={`font-black text-2xl ${freeToSpend >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                    {formatAmount(freeToSpend)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Currency Selector - Mobile */}
+        {/* Enhanced Additional Info */}
+        <div className="flex items-center justify-between text-xs bg-muted/20 rounded-lg p-3 border border-border/30">
+          <div className="space-y-1">
+            {lastSalaryDate && (
+              <p className="text-muted-foreground">
+                <span className="font-medium">Last income:</span> {lastSalaryDate.toLocaleDateString()}
+              </p>
+            )}
+            <p className="text-muted-foreground">
+              <span className="font-medium">Current balance:</span> {formatAmount(currentBalance)}
+            </p>
+          </div>
+        </div>
+
+        {/* Enhanced Currency Selector - Mobile */}
         <div className="md:hidden">
           <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full border-primary/20 hover:border-primary/40 transition-colors">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
               {currencies.map((curr) => (
-                <SelectItem key={curr.code} value={curr.code}>
+                <SelectItem key={curr.code} value={curr.code} className="hover:bg-primary/10">
                   {curr.symbol} {curr.code}
                 </SelectItem>
               ))}
@@ -160,13 +207,13 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
           </Select>
         </div>
 
-        {/* Action Button */}
+        {/* Enhanced Action Button */}
         {freeToSpend <= 50 && (
           <Button 
             onClick={() => setShowBorrowModal(true)} 
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2"
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25"
           >
-            <AlertTriangle className="w-4 h-4" />
+            <AlertTriangle className="w-5 h-5 mr-2" />
             I Need More Money
           </Button>
         )}
