@@ -44,23 +44,24 @@ export const useAccurateFreeToSpend = (): AccurateFreeToSpendCalculations => {
     const today = new Date();
     today.setHours(23, 59, 59, 999); // End of today for comparisons
 
-    // Step 1: Get Income Until Today
+    // Step 1: Get Income Until Today (from financial profile start date)
     let totalIncome = 0;
     let lastSalaryDate: Date | null = null;
+    
+    const startDate = new Date(profile.start_date + 'T00:00:00');
 
-    // From salary table - get all paycheck dates before or equal to today
+    // From salary table - get all paycheck dates from start_date until today
     if (salary && salary.paychecks && salary.pay_dates) {
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth();
+      const avgPaycheck = salary.paychecks.reduce((sum, amount) => sum + amount, 0) / salary.paychecks.length;
       
-      // Check salary dates from beginning of year until today
-      for (let month = 0; month <= currentMonth; month++) {
+      // Start from the profile start date, not beginning of year
+      let checkDate = new Date(startDate);
+      
+      while (checkDate <= today) {
         for (const payDate of salary.pay_dates) {
-          const salaryDate = new Date(currentYear, month, payDate);
+          const salaryDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), payDate);
           
-          if (salaryDate <= today) {
-            // Calculate average paycheck amount
-            const avgPaycheck = salary.paychecks.reduce((sum, amount) => sum + amount, 0) / salary.paychecks.length;
+          if (salaryDate >= startDate && salaryDate <= today) {
             totalIncome += avgPaycheck;
             
             // Track the most recent salary date
@@ -69,6 +70,10 @@ export const useAccurateFreeToSpend = (): AccurateFreeToSpendCalculations => {
             }
           }
         }
+        
+        // Move to next month
+        checkDate.setMonth(checkDate.getMonth() + 1);
+        checkDate.setDate(1);
       }
     }
 
