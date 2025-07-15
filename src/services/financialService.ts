@@ -152,13 +152,55 @@ export const updateSavingsGoal = async (id: string, updates: TablesUpdate<'savin
   return data;
 };
 
-export const deleteSavingsGoal = async (id: string) => {
-  const { error } = await supabase
+export const deleteSavingsGoal = async (goalId: string): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // First, get the goal to check current amount
+  const { data: goal, error: fetchError } = await supabase
+    .from('savings_goals')
+    .select('current_amount, name')
+    .eq('id', goalId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError) throw fetchError;
+  if (!goal) throw new Error('Goal not found');
+
+  const currentAmount = parseFloat(goal.current_amount.toString());
+
+  // If there's money in the goal, transfer it back to free spend
+  if (currentAmount > 0) {
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        type: 'income',
+        amount: currentAmount,
+        description: `Money recovered from deleted goal: ${goal.name}`,
+        date: new Date().toISOString().split('T')[0],
+        category: 'goal-deletion',
+        user_id: user.id
+      });
+
+    if (transactionError) throw transactionError;
+  }
+
+  // Delete related transactions first (this removes the foreign key constraint)
+  const { error: deleteTransactionsError } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('goal_id', goalId);
+
+  if (deleteTransactionsError) throw deleteTransactionsError;
+
+  // Now delete the goal
+  const { error: deleteGoalError } = await supabase
     .from('savings_goals')
     .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
+    .eq('id', goalId)
+    .eq('user_id', user.id);
+
+  if (deleteGoalError) throw deleteGoalError;
 };
 
 // Transactions Operations
