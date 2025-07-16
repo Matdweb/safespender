@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, DollarSign, TrendingDown, ArrowUpCircle, PiggyBank } from 'lucide-react';
-import { useDeleteTransaction } from '@/hooks/useFinancialData';
+import { useDeleteTransaction, useDeleteExpense } from '@/hooks/useFinancialData';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +27,7 @@ interface TransactionsListProps {
 const TransactionsList = ({ transactions }: TransactionsListProps) => {
   const { currency } = useFinancial();
   const deleteTransactionMutation = useDeleteTransaction();
+  const deleteExpenseMutation = useDeleteExpense();
   const { toast } = useToast();
 
   // Sort transactions by date (most recent first)
@@ -36,17 +37,31 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
       .slice(0, 10);
   }, [transactions]);
 
-  const handleDeleteTransaction = async (id: string) => {
+  const handleDeleteTransaction = async (id: string, type: string, description: string) => {
     try {
-      await deleteTransactionMutation.mutateAsync(id);
-      toast({
-        title: "Transaction Deleted",
-        description: "Transaction has been removed",
-      });
+      // Check if this is a programmed expense that needs to be deleted from the expenses table
+      if (type === 'expense' && id.startsWith('recurring-')) {
+        // This is a generated recurring expense, find and delete the original expense
+        const expenseId = id.split('-')[1]; // Extract the expense ID from the generated ID
+        await deleteExpenseMutation.mutateAsync(expenseId);
+        toast({
+          title: "Recurring Expense Deleted",
+          description: `"${description}" and all its future occurrences have been removed`,
+        });
+      } else {
+        // This is a regular transaction
+        await deleteTransactionMutation.mutateAsync(id);
+        const itemType = type === 'income' ? 'Income' : type === 'expense' ? 'Expense' : 'Savings';
+        toast({
+          title: `${itemType} Deleted`,
+          description: `"${description}" has been removed`,
+        });
+      }
     } catch (error) {
+      console.error('Error deleting item:', error);
       toast({
         title: "Error",
-        description: "Failed to delete transaction",
+        description: "Failed to delete item. Please try again.",
         variant: "destructive"
       });
     }
@@ -144,9 +159,9 @@ const TransactionsList = ({ transactions }: TransactionsListProps) => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleDeleteTransaction(transaction.id)}
+                    onClick={() => handleDeleteTransaction(transaction.id, transaction.type, transaction.description)}
                     className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                    disabled={deleteTransactionMutation.isPending}
+                    disabled={deleteTransactionMutation.isPending || deleteExpenseMutation.isPending}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>

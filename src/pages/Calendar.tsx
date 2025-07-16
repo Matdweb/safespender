@@ -7,8 +7,6 @@ import ViewDayModal from '@/components/calendar/ViewDayModal';
 import LoadingScreen from '@/components/LoadingScreen';
 import { CalendarItem } from '@/types/calendar';
 import { useEnhancedCalendar } from '@/hooks/useEnhancedCalendar';
-import { useDeleteTransaction } from '@/hooks/useFinancialData';
-import { useToast } from '@/hooks/use-toast';
 
 const Calendar = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -17,8 +15,6 @@ const Calendar = () => {
   const [showViewModal, setShowViewModal] = useState(false);
 
   const { calendarItems, getItemsForDate, isLoading } = useEnhancedCalendar(currentDate);
-  const deleteTransactionMutation = useDeleteTransaction();
-  const { toast } = useToast();
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -36,29 +32,9 @@ const Calendar = () => {
   };
 
   const handleDeleteItem = async (id: string) => {
-    // Only delete if it's not a generated salary transaction
-    if (id.startsWith('salary-') || id.startsWith('savings-')) {
-      toast({
-        title: "Cannot Delete",
-        description: "Generated transactions cannot be deleted directly",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await deleteTransactionMutation.mutateAsync(id);
-      toast({
-        title: "Item Deleted",
-        description: "Transaction has been removed",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete item",
-        variant: "destructive"
-      });
-    }
+    // The deletion is handled in the ViewDayModal component
+    // We just need to refresh the calendar data, which happens automatically
+    // through the React Query invalidation in the hooks
   };
 
   // Convert CalendarTransactions to CalendarItems for component compatibility

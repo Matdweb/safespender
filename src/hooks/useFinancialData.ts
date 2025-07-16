@@ -106,6 +106,7 @@ export const useDeleteExpense = () => {
     mutationFn: deleteExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 };
@@ -201,6 +202,7 @@ export const useDeleteTransaction = () => {
     mutationFn: deleteTransaction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
     },
   });
 };

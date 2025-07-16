@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/card';
 import { CalendarItem } from '@/types/calendar';
 import { DollarSign, TrendingDown, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDeleteTransaction, useDeleteExpense } from '@/hooks/useFinancialData';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +30,51 @@ interface ViewDayModalProps {
 }
 
 const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, onAddNew }: ViewDayModalProps) => {
+  const deleteTransactionMutation = useDeleteTransaction();
+  const deleteExpenseMutation = useDeleteExpense();
+  const { toast } = useToast();
+
+  const handleDeleteItem = async (id: string, title: string) => {
+    try {
+      // Check if this is a generated salary or savings transaction
+      if (id.startsWith('salary-') || id.startsWith('savings-')) {
+        toast({
+          title: "Cannot Delete",
+          description: "Generated transactions cannot be deleted directly. Modify your salary or savings settings instead.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if this is a programmed expense that needs to be deleted from the expenses table
+      if (id.startsWith('expense-')) {
+        const expenseId = id.replace('expense-', '');
+        await deleteExpenseMutation.mutateAsync(expenseId);
+        toast({
+          title: "Recurring Expense Deleted",
+          description: `"${title}" and all its future occurrences have been removed`,
+        });
+      } else {
+        // This is a regular transaction
+        await deleteTransactionMutation.mutateAsync(id);
+        toast({
+          title: "Item Deleted",
+          description: `"${title}" has been removed`,
+        });
+      }
+      
+      // Call the parent's onDeleteItem to update the UI
+      onDeleteItem(id);
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getItemIcon = (type: string) => {
     switch (type) {
       case 'income':
@@ -138,12 +185,17 @@ const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, o
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Item</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete "{item.title}"? This action cannot be undone.
+                            Are you sure you want to delete "{item.title}"? 
+                            {item.recurring && " This will delete all future occurrences of this recurring item."}
+                            {" "}This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDeleteItem(item.id)}>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteItem(item.id, item.title)}
+                            disabled={deleteTransactionMutation.isPending || deleteExpenseMutation.isPending}
+                          >
                             Delete
                           </AlertDialogAction>
                         </AlertDialogFooter>
