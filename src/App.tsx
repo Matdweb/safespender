@@ -21,7 +21,7 @@ import FeatureTour from "@/components/tour/FeatureTour";
 const queryClient = new QueryClient();
 
 const OnboardingChecker = ({ children }: { children: React.ReactNode }) => {
-  const { hasCompletedOnboarding, isCheckingOnboarding } = useFinancial();
+  const { hasCompletedOnboarding, isCheckingOnboarding, completeOnboarding } = useFinancial();
 
   if (isCheckingOnboarding) {
     return <LoadingScreen />;
@@ -32,14 +32,23 @@ const OnboardingChecker = ({ children }: { children: React.ReactNode }) => {
       <OnboardingFlow
         open={true}
         onComplete={() => {
-          // Onboarding completion is handled by SummaryStep
-          // No page reload needed anymore
+          completeOnboarding();
         }}
       />
     );
   }
 
   return <>{children}</>;
+};
+
+const ProtectedRouteWithOnboarding = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <ProtectedRoute>
+      <OnboardingChecker>
+        {children}
+      </OnboardingChecker>
+    </ProtectedRoute>
+  );
 };
 
 const AppRoutes = () => {
@@ -56,9 +65,9 @@ const AppRoutes = () => {
           path="/" 
           element={
             user ? (
-              <ProtectedRoute>
+              <ProtectedRouteWithOnboarding>
                 <Index />
-              </ProtectedRoute>
+              </ProtectedRouteWithOnboarding>
             ) : (
               <Landing />
             )
@@ -68,17 +77,17 @@ const AppRoutes = () => {
         <Route 
           path="/calendar" 
           element={
-            <ProtectedRoute>
+            <ProtectedRouteWithOnboarding>
               <Calendar />
-            </ProtectedRoute>
+            </ProtectedRouteWithOnboarding>
           } 
         />
         <Route 
           path="/goals" 
           element={
-            <ProtectedRoute>
+            <ProtectedRouteWithOnboarding>
               <Goals />
-            </ProtectedRoute>
+            </ProtectedRouteWithOnboarding>
           } 
         />
         <Route path="*" element={<NotFound />} />
@@ -95,9 +104,7 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <FinancialProvider>
-              <OnboardingChecker>
-                <AppRoutes />
-              </OnboardingChecker>
+              <AppRoutes />
             </FinancialProvider>
             <Toaster />
           </AuthProvider>
