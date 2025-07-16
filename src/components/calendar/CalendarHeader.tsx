@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 interface CalendarHeaderProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
-  onAddClick: () => void;
+  onAddClick?: () => void; // Made optional since we no longer use it
 }
 
 const CalendarHeader = ({ currentDate, onDateChange, onAddClick }: CalendarHeaderProps) => {
@@ -93,11 +93,14 @@ const CalendarHeader = ({ currentDate, onDateChange, onAddClick }: CalendarHeade
           </Button>
         </div>
       </div>
-
-      <Button onClick={onAddClick} className="flex items-center gap-2">
-        <Plus className="h-4 w-4" />
-        Add Item
-      </Button>
+      
+      {/* Optional add button - hidden since individual cells now handle add actions */}
+      {onAddClick && (
+        <Button onClick={onAddClick} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Item
+        </Button>
+      )}
     </div>
   );
 };

@@ -3,23 +3,20 @@ import React, { useState } from 'react';
 import Header from '@/components/Header';
 import CalendarView from '@/components/calendar/CalendarView';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
-import AddItemModal from '@/components/calendar/AddItemModal';
 import ViewDayModal from '@/components/calendar/ViewDayModal';
 import LoadingScreen from '@/components/LoadingScreen';
 import { CalendarItem } from '@/types/calendar';
 import { useEnhancedCalendar } from '@/hooks/useEnhancedCalendar';
-import { useCreateTransaction, useDeleteTransaction } from '@/hooks/useFinancialData';
+import { useDeleteTransaction } from '@/hooks/useFinancialData';
 import { useToast } from '@/hooks/use-toast';
 
 const Calendar = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
 
   const { calendarItems, getItemsForDate, isLoading } = useEnhancedCalendar(currentDate);
-  const createTransactionMutation = useCreateTransaction();
   const deleteTransactionMutation = useDeleteTransaction();
   const { toast } = useToast();
 
@@ -34,39 +31,8 @@ const Calendar = () => {
     
     if (hasItems) {
       setShowViewModal(true);
-    } else {
-      setShowAddModal(true);
     }
-  };
-
-  const handleItemAdded = () => {
-    // Close any open modals and refresh data
-    setShowAddModal(false);
-    setShowViewModal(false);
-    // The data will refresh automatically via react-query
-  };
-
-  const handleAddItem = async (item: Omit<CalendarItem, 'id'>) => {
-    try {
-      await createTransactionMutation.mutateAsync({
-        type: item.type === 'borrow' ? 'income' : item.type,
-        amount: item.amount,
-        description: item.title,
-        date: item.date,
-        category: item.category || (item.type === 'borrow' ? 'advance' : undefined),
-      });
-      
-      toast({
-        title: "Item Added!",
-        description: `${item.title} has been added to your calendar`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add item",
-        variant: "destructive"
-      });
-    }
+    // For empty days, the calendar cells now handle their own add buttons
   };
 
   const handleDeleteItem = async (id: string) => {
@@ -96,16 +62,6 @@ const Calendar = () => {
   };
 
   // Convert CalendarTransactions to CalendarItems for component compatibility
-  const convertedCalendarItems: CalendarItem[] = calendarItems.map(item => ({
-    id: item.id,
-    type: item.type as 'income' | 'expense' | 'savings',
-    title: item.title,
-    amount: item.amount,
-    date: item.date,
-    category: item.category,
-    description: item.description,
-  }));
-
   const convertedGetItemsForDate = (date: Date): CalendarItem[] => {
     const items = getItemsForDate(date);
     return items.map(item => ({
@@ -132,24 +88,16 @@ const Calendar = () => {
           <CalendarHeader 
             currentDate={currentDate}
             onDateChange={setCurrentDate}
-            onAddClick={() => setShowAddModal(true)}
           />
           
-           <CalendarView
-             currentDate={currentDate}
-             items={calendarItems}
-             onDateClick={handleDateClick}
-             getItemsForDate={getItemsForDate}
-           />
+          <CalendarView
+            currentDate={currentDate}
+            items={calendarItems}
+            onDateClick={handleDateClick}
+            getItemsForDate={getItemsForDate}
+          />
         </div>
       </main>
-
-      <AddItemModal
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-        selectedDate={selectedDate}
-        onAddItem={handleAddItem}
-      />
 
       <ViewDayModal
         open={showViewModal}
@@ -159,7 +107,7 @@ const Calendar = () => {
         onDeleteItem={handleDeleteItem}
         onAddNew={() => {
           setShowViewModal(false);
-          setShowAddModal(true);
+          // Individual calendar cells now handle their own add actions
         }}
       />
     </div>
