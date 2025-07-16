@@ -105,8 +105,8 @@ function App() {
           <AuthProvider>
             <FinancialProvider>
               <AppRoutes />
+              <Toaster />
             </FinancialProvider>
-            <Toaster />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
