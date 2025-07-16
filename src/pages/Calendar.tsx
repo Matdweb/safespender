@@ -39,6 +39,13 @@ const Calendar = () => {
     }
   };
 
+  const handleItemAdded = () => {
+    // Close any open modals and refresh data
+    setShowAddModal(false);
+    setShowViewModal(false);
+    // The data will refresh automatically via react-query
+  };
+
   const handleAddItem = async (item: Omit<CalendarItem, 'id'>) => {
     try {
       await createTransactionMutation.mutateAsync({
