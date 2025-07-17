@@ -27,6 +27,7 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
   // Initialize form with current salary data
   useEffect(() => {
     if (currentSalary) {
+      console.log('Fetched salary:', currentSalary);
       setSchedule(currentSalary.schedule);
       setPayDates(currentSalary.pay_dates.map(d => d.toString()));
       setPaychecks(currentSalary.paychecks.map(p => p.toString()));
@@ -216,10 +217,11 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
                       value={paychecks[index]}
                       onChange={(e) => updatePaycheck(index, e.target.value)}
                       placeholder="Amount"
-                      className={`pl-8 ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
+                      className={`pl-8 py-3 text-base font-medium text-right ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
                       step="0.01"
                       min="0"
                     />
+
                   </div>
                   {payDates.length > 1 && (
                     <Button
