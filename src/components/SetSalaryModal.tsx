@@ -27,7 +27,6 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
   // Initialize form with current salary data
   useEffect(() => {
     if (currentSalary) {
-      console.log('Fetched salary:', currentSalary);
       setSchedule(currentSalary.schedule);
       setPayDates(currentSalary.pay_dates.map(d => d.toString()));
       setPaychecks(currentSalary.paychecks.map(p => p.toString()));
@@ -208,22 +207,19 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
                     placeholder="Day of month (1-31)"
                     min="1"
                     max="31"
-                    className={errors[`payDate-${index}`] ? 'border-destructive' : ''}
+                    className={`max-w-[100px] md:max-w-[200px] w-full ${errors[`payDate-${index}`] ? 'border-destructive' : ''}`}
                   />
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                    <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
-  <Input
-    type="number"
-    value={paychecks[index]}
-    onChange={(e) => updatePaycheck(index, e.target.value)}
-    placeholder="Amount"
-    className={`pl-8 py-3 text-base font-semibold text-right w-full ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
-    step="0.01"
-    min="0"
-  />
-</div>
-
+                    <Input
+                      type="number"
+                      value={paychecks[index]}
+                      onChange={(e) => updatePaycheck(index, e.target.value)}
+                      placeholder="Amount"
+                      className={`pl-8 py-3 text-base font-medium text-right ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
+                      step="0.01"
+                      min="0"
+                    />
 
                   </div>
                   {payDates.length > 1 && (
