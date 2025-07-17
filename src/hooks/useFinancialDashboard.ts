@@ -3,7 +3,7 @@ import { useFinancialProfile, useExpenses, useSavingsGoals, useTransactions } fr
 import { useSalary } from './useSalary';
 import { useFinancialCalculations } from './useFinancialCalculations';
 import { useSalaryTransactions } from './useSalaryTransactions';
-import { useExpenseTransactionSync } from './useExpenseTransactionSync';
+
 
 export const useFinancialDashboard = () => {
   const { data: profile, isLoading: isLoadingProfile } = useFinancialProfile();
@@ -14,8 +14,6 @@ export const useFinancialDashboard = () => {
 
   const isLoading = isLoadingProfile || isLoadingSalary || isLoadingExpenses || isLoadingGoals || isLoadingTransactions;
 
-  // Sync recurring expenses with transactions
-  useExpenseTransactionSync();
 
   // Use separated calculation and salary transaction hooks
   const calculations = useFinancialCalculations(transactions, expenses, goals, profile, salary);

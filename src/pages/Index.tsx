@@ -6,6 +6,7 @@ import TourAutoStarter from '@/components/tour/TourAutoStarter';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import DashboardModals from '@/components/dashboard/DashboardModals';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useUnifiedFreeToSpend } from '@/hooks/useUnifiedFreeToSpend';
 import { useDashboardHandlers } from '@/hooks/useDashboardHandlers';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 
@@ -30,14 +31,21 @@ const Index = () => {
     transactions,
     goals,
     salary,
-    totalIncome,
-    totalExpenses,
-    reservedExpenses,
-    assignedSavings,
-    freeToSpend,
     generateSalaryTransactions,
-    isLoading
+    isLoading: dashboardLoading
   } = useFinancialDashboard();
+
+  // Use the new unified calculation system
+  const {
+    totalIncome,
+    reservedForBills: reservedExpenses,
+    assignedToSavings,
+    freeToSpend,
+    currentBalance,
+    isLoading: calculationsLoading
+  } = useUnifiedFreeToSpend();
+
+  const isLoading = dashboardLoading || calculationsLoading;
 
   const { handleAddIncome, handleAddExpense, handleAddSavings } = useDashboardHandlers();
   
@@ -80,10 +88,10 @@ const Index = () => {
       
       <DashboardContent
         freeToSpend={freeToSpend}
-        totalIncome={totalIncome}
-        totalExpenses={totalExpenses}
+        totalIncome={currentBalance} // Show current balance as total income
+        totalExpenses={currentBalance - totalIncome} // Calculate expenses from balance
         reservedExpenses={reservedExpenses}
-        assignedSavings={assignedSavings}
+        assignedSavings={assignedToSavings}
         transactions={convertedTransactions}
         upcomingEvents={upcomingEvents}
         goals={goals || []}
