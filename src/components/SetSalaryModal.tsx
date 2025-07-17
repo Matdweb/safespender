@@ -212,15 +212,18 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
                   />
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      value={paychecks[index]}
-                      onChange={(e) => updatePaycheck(index, e.target.value)}
-                      placeholder="Amount"
-                      className={`pl-8 py-3 text-base font-medium text-right ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
-                      step="0.01"
-                      min="0"
-                    />
+                    <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
+  <Input
+    type="number"
+    value={paychecks[index]}
+    onChange={(e) => updatePaycheck(index, e.target.value)}
+    placeholder="Amount"
+    className={`pl-8 py-3 text-base font-semibold text-right w-full ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
+    step="0.01"
+    min="0"
+  />
+</div>
+
 
                   </div>
                   {payDates.length > 1 && (
