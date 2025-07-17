@@ -80,13 +80,6 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
             Math.abs(netFlow).toLocaleString()}
         </div>
       )}
-
-      {/* Show add button on mobile/touch for empty days */}
-      {items.length === 0 && isCurrentMonth && (
-        <div className="absolute inset-0 flex items-center justify-center bg-accent/10 rounded-lg sm:hidden touch-manipulation">
-          <span className="text-xs text-muted-foreground">Tap to add</span>
-        </div>
-      )}
       
       {/* Hover effect - only on larger screens */}
       {isHovered && items.length === 0 && (
