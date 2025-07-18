@@ -76,6 +76,16 @@ const UnifiedTransactionModal = ({
 
     try {
       const parsedAmount = parseFloat(amount);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to add transactions',
+          variant: 'destructive',
+        });
+        return;
+      }
       
       if (type === 'income') {
         // Create income transaction
@@ -85,13 +95,13 @@ const UnifiedTransactionModal = ({
           date: format(date, 'yyyy-MM-dd'),
           category: category || 'income',
           type: 'income',
+          user_id: user.id,
         });
       } else if (type === 'expense') {
         await addExpense({
           amount: parsedAmount,
-          description,
-          date: format(date, 'yyyy-MM-dd'),
           category: category || 'general',
+          date: format(date, 'yyyy-MM-dd'),
           isRecurring,
           recurringType: isRecurring ? recurringType : undefined,
         });
@@ -113,6 +123,7 @@ const UnifiedTransactionModal = ({
           category: 'savings',
           type: 'savings',
           goal_id: selectedGoalId,
+          user_id: user.id,
         });
       }
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarItem } from '@/types/calendar';
 import { format } from 'date-fns';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, DollarSign, TrendingDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDeleteExpense } from '@/hooks/useFinancialData';
 import { Separator } from '@/components/ui/separator';
