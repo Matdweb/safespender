@@ -22,6 +22,7 @@ const CalendarView = ({ currentDate, items, onDateClick, getItemsForDate }: Cale
   
   const filterSavingsOnlyOn16th = (date: Date, items: CalendarTransaction[]) => {
     return items.filter(item => {
+      console.log(item);
       if (item.type === 'savings') {
         return date.getDate() === 16;
       }
