@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSavingsGoals, useCreateTransaction, useUpdateSavingsGoal } from '@/hooks/useFinancialData';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
+import { useUnifiedFreeToSpend } from '@/hooks/useUnifiedFreeToSpend';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { PiggyBank } from 'lucide-react';
@@ -21,7 +22,8 @@ const ExtraContributionDialog = ({ open, onOpenChange }: ExtraContributionDialog
   const [description, setDescription] = useState('');
 
   const { data: goals } = useSavingsGoals();
-  const { freeToSpend, currency } = useFinancialDashboard();
+  const { freeToSpend } = useUnifiedFreeToSpend();
+  const { currency } = useFinancialDashboard();
   const createTransactionMutation = useCreateTransaction();
   const updateSavingsGoalMutation = useUpdateSavingsGoal();
   const { toast } = useToast();
