@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
-import { format } from 'date-fns';
-import { CalendarIcon, DollarSign } from 'lucide-react';
 
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { DollarSign } from 'lucide-react';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { getCurrencySymbol } from '@/utils/currencyUtils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
 
 interface AddIncomeDialogProps {
   open: boolean;
@@ -25,25 +23,25 @@ interface AddIncomeDialogProps {
 const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogProps) => {
   const { currency } = useFinancial();
   const [amount, setAmount] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const currencySymbol = getCurrencySymbol(currency);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || parseFloat(amount) <= 0 || !selectedDate) return;
+    
+    if (!amount || parseFloat(amount) <= 0) return;
 
     onAddIncome({
       amount: parseFloat(amount),
-      date: selectedDate.toISOString().split('T')[0],
-      description: description || 'One-time Income',
+      date,
+      description: description || 'One-time Income'
     });
 
     // Reset form
     setAmount('');
-    setSelectedDate(new Date());
+    setDate(new Date().toISOString().split('T')[0]);
     setDescription('');
     onOpenChange(false);
   };
@@ -61,7 +59,6 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Amount Input */}
           <div className="space-y-2">
             <Label htmlFor="amount">Amount ({currency})</Label>
             <div className="relative">
@@ -80,38 +77,17 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
             </div>
           </div>
 
-          {/* 🗓️ Custom Date Picker */}
           <div className="space-y-2">
-            <Label>Date</Label>
-            <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => {
-                    setSelectedDate(date);
-                    setShowDatePicker(false);
-                  }}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
           </div>
 
-          {/* Description Input */}
           <div className="space-y-2">
             <Label htmlFor="description">Description (optional)</Label>
             <Input
@@ -122,14 +98,12 @@ const AddIncomeDialog = ({ open, onOpenChange, onAddIncome }: AddIncomeDialogPro
             />
           </div>
 
-          {/* Info box */}
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
               💡 This is a one-time income. For regular salary, use "Set Salary" in your settings.
             </p>
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancel

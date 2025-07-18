@@ -6,7 +6,7 @@ import CalendarHeader from '@/components/calendar/CalendarHeader';
 import ViewDayModal from '@/components/calendar/ViewDayModal';
 import LoadingScreen from '@/components/LoadingScreen';
 import { CalendarItem } from '@/types/calendar';
-import { useCleanCalendarData } from '@/hooks/useCleanCalendarData';
+import { useEnhancedCalendar } from '@/hooks/useEnhancedCalendar';
 
 const Calendar = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -14,7 +14,7 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
 
-  const { calendarItems, getItemsForDate, isLoading } = useCleanCalendarData(currentDate);
+  const { calendarItems, getItemsForDate, isLoading } = useEnhancedCalendar(currentDate);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);

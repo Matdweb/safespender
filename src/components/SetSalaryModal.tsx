@@ -207,7 +207,7 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
                     placeholder="Day of month (1-31)"
                     min="1"
                     max="31"
-                    className={`max-w-[100px] md:max-w-[200px] w-full ${errors[`payDate-${index}`] ? 'border-destructive' : ''}`}
+                    className={errors[`payDate-${index}`] ? 'border-destructive' : ''}
                   />
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
@@ -216,11 +216,10 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
                       value={paychecks[index]}
                       onChange={(e) => updatePaycheck(index, e.target.value)}
                       placeholder="Amount"
-                      className={`pl-8 py-3 text-base font-medium text-right ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
+                      className={`pl-8 ${errors[`paycheck-${index}`] ? 'border-destructive' : ''}`}
                       step="0.01"
                       min="0"
                     />
-
                   </div>
                   {payDates.length > 1 && (
                     <Button

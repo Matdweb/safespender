@@ -46,37 +46,21 @@ const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, o
         return;
       }
 
-      // Check if this is a recurring expense (generated from expenses table)
-      if (id.startsWith('recurring-')) {
-        // Extract the original expense ID from the RPC result format
-        const parts = id.split('-');
-        if (parts.length >= 2) {
-          const expenseId = parts[1]; // recurring-{expense_id}-{date}
-          await deleteExpenseMutation.mutateAsync(expenseId);
-          toast({
-            title: "Recurring Expense Deleted",
-            description: `"${title}" and all its future occurrences have been removed`,
-          });
-        }
+      // Check if this is a programmed expense that needs to be deleted from the expenses table
+      if (id.startsWith('expense-')) {
+        const expenseId = id.replace('expense-', '');
+        await deleteExpenseMutation.mutateAsync(expenseId);
+        toast({
+          title: "Recurring Expense Deleted",
+          description: `"${title}" and all its future occurrences have been removed`,
+        });
       } else {
-        // This is a regular transaction (one-time income/expense)
+        // This is a regular transaction
         await deleteTransactionMutation.mutateAsync(id);
-        
-        // Only update free-to-spend if the expense date is today or in the past
-        const selectedDateStr = selectedDate?.toISOString().split('T')[0];
-        const today = new Date().toISOString().split('T')[0];
-        
-        if (selectedDateStr && selectedDateStr <= today) {
-          toast({
-            title: "Item Deleted",
-            description: `"${title}" has been removed and your balance updated`,
-          });
-        } else {
-          toast({
-            title: "Future Item Deleted",
-            description: `"${title}" has been removed (no impact on current balance)`,
-          });
-        }
+        toast({
+          title: "Item Deleted",
+          description: `"${title}" has been removed`,
+        });
       }
       
       // Call the parent's onDeleteItem to update the UI
