@@ -46,8 +46,32 @@ const ViewDayModal = ({ open, onOpenChange, selectedDate, items, onDeleteItem, o
         return;
       }
 
-      // Check if this is a programmed expense that needs to be deleted from the expenses table
-      if (id.startsWith('expense-')) {
+      // Check if this is a recurring expense (format: recurring-{uuid}-{date} or {uuid}-{date})
+      if (id.startsWith('recurring-') || (id.includes('-') && id.split('-').length > 5)) {
+        let expenseId: string;
+        
+        if (id.startsWith('recurring-')) {
+          // Format: recurring-{uuid}-{date}
+          const parts = id.split('-');
+          // Reconstruct UUID from parts 1-5 (skip 'recurring' and date parts)
+          expenseId = parts.slice(1, 6).join('-');
+        } else {
+          // Format: {uuid}-{date} - extract just the UUID part
+          const parts = id.split('-');
+          if (parts.length >= 5) {
+            expenseId = parts.slice(0, 5).join('-');
+          } else {
+            throw new Error('Invalid recurring expense ID format');
+          }
+        }
+        
+        await deleteExpenseMutation.mutateAsync(expenseId);
+        toast({
+          title: "Recurring Expense Deleted",
+          description: `"${title}" and all its future occurrences have been removed`,
+        });
+      } else if (id.startsWith('expense-')) {
+        // Legacy format: expense-{uuid}
         const expenseId = id.replace('expense-', '');
         await deleteExpenseMutation.mutateAsync(expenseId);
         toast({
