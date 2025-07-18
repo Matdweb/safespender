@@ -99,11 +99,12 @@ const UnifiedTransactionModal = ({
         });
       } else if (type === 'expense') {
         await addExpense({
-          amount: parsedAmount,
+          title: description,
           category: category || 'general',
-          date: format(date, 'yyyy-MM-dd'),
-          isRecurring,
-          recurringType: isRecurring ? recurringType : undefined,
+          amount: parsedAmount,
+          type: isRecurring ? 'monthly' : 'one-time',
+          date: isRecurring ? undefined : format(date, 'yyyy-MM-dd'),
+          day_of_month: isRecurring ? date.getDate() : undefined,
         });
       } else if (type === 'savings') {
         if (!selectedGoalId) {
