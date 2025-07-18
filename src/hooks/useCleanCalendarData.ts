@@ -132,10 +132,26 @@ export const useCleanCalendarData = (currentDate: Date) => {
     loadCalendarItems();
   }, [transactions, currentDate, generateSalaryTransactions, goals]);
 
-  const getItemsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return calendarItemsState.filter(item => item.date === dateStr);
-  };
+const getItemsForDate = (date: Date) => {
+  const dateStr = date.toISOString().split('T')[0];
+
+  // Preprocess: adjust all savings item dates to the 16th
+  const adjustedItems = calendarItemsState.map(item => {
+    if (item.type === 'savings') {
+      const originalDate = new Date(item.date);
+      if (originalDate.getDate() !== 16) {
+        const newDate = new Date(originalDate);
+        newDate.setDate(16);
+        const newDateStr = newDate.toISOString().split('T')[0];
+        return { ...item, date: newDateStr };
+      }
+    }
+    return item;
+  });
+
+  // Now filter using the mutated dateStr
+  return adjustedItems.filter(item => item.date === dateStr);
+};
 
   return {
     calendarItems: calendarItemsState,
