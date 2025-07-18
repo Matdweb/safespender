@@ -1,102 +1,118 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
-import QuickActions from '@/components/QuickActions';
-import FreeToSpendCard from '@/components/FreeToSpendCard';
-import SavingsGoals from '@/components/SavingsGoals';
-import TransactionsList from '@/components/TransactionsList';
-import UpcomingEvents from '@/components/UpcomingEvents';
 import LoadingScreen from '@/components/LoadingScreen';
 import TourAutoStarter from '@/components/tour/TourAutoStarter';
-import UnifiedTransactionModal from '@/components/modals/UnifiedTransactionModal';
-import { useTransactionModal } from '@/hooks/useTransactionModal';
+import DashboardContent from '@/components/dashboard/DashboardContent';
+import DashboardModals from '@/components/dashboard/DashboardModals';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
-import { useNavigate } from 'react-router-dom';
+import { useUnifiedFreeToSpend } from '@/hooks/useUnifiedFreeToSpend';
+import { useDashboardHandlers } from '@/hooks/useDashboardHandlers';
+import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
+
+interface Transaction {
+  id: string;
+  type: 'income' | 'expense' | 'savings';
+  amount: number | string;
+  description: string;
+  date: string;
+  category?: string;
+  created_at?: string;
+}
 
 const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const [showIncomeDialog, setShowIncomeDialog] = useState(false);
+  const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  const [showSavingsDialog, setShowSavingsDialog] = useState(false);
   const [showSalaryModal, setShowSalaryModal] = useState(false);
-  
-  const { isLoading } = useFinancialDashboard();
-  const navigate = useNavigate();
 
   const {
-    isIncomeModalOpen,
-    isExpenseModalOpen,
-    isSavingsModalOpen,
-    modalDate,
-    modalTitle,
-    openIncomeModal,
-    openExpenseModal,
-    openSavingsModal,
-    closeAllModals,
-  } = useTransactionModal();
+    transactions,
+    goals,
+    salary,
+    generateSalaryTransactions,
+    isLoading: dashboardLoading
+  } = useFinancialDashboard();
+
+  // Use the new unified calculation system
+  const {
+    totalIncome,
+    reservedForBills: reservedExpenses,
+    assignedToSavings,
+    freeToSpend,
+    currentBalance,
+    isLoading: calculationsLoading
+  } = useUnifiedFreeToSpend();
+
+  const isLoading = dashboardLoading || calculationsLoading;
+
+  const { handleAddIncome, handleAddExpense, handleAddSavings } = useDashboardHandlers();
+  
+  // Cast transactions to proper type for upcoming events
+  const typedTransactions = transactions?.map(t => ({
+    ...t,
+    type: t.type as 'income' | 'expense' | 'savings'
+  }));
+  
+  const upcomingEvents = useUpcomingEvents(typedTransactions, goals, salary, generateSalaryTransactions);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle('dark');
   };
 
+  useEffect(() => {
+    document.body.classList.add('animate-fade-in');
+  }, []);
+
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
-      <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <QuickActions
-            onAddIncome={() => openIncomeModal()}
-            onAddExpense={() => openExpenseModal()}
-            onAddSavings={() => openSavingsModal()}
-            onSetSalary={() => setShowSalaryModal(true)}
-            onViewCalendar={() => navigate('/calendar')}
-            onViewGoals={() => navigate('/goals')}
-          />
-          
-          <FreeToSpendCard />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-8">
-              <SavingsGoals 
-                goals={[]}
-                onAddGoal={() => navigate('/goals')}
-              />
-            </div>
-            
-            <div className="space-y-8">
-              <TransactionsList transactions={[]} />
-              <UpcomingEvents events={[]} />
-            </div>
-          </div>
-        </div>
-      </main>
+  // Convert database transactions to component format
+  const convertedTransactions: Transaction[] = transactions ? transactions.map(t => ({
+    id: t.id,
+    type: t.type as 'income' | 'expense' | 'savings',
+    amount: t.amount,
+    description: t.description,
+    date: t.date,
+    category: t.category || undefined,
+    created_at: t.created_at
+  })) : [];
 
-      {/* Unified Transaction Modals */}
-      <UnifiedTransactionModal
-        open={isIncomeModalOpen}
-        onOpenChange={(open) => !open && closeAllModals()}
-        type="income"
-        defaultDate={modalDate}
-        title={modalTitle}
-      />
-      <UnifiedTransactionModal
-        open={isExpenseModalOpen}
-        onOpenChange={(open) => !open && closeAllModals()}
-        type="expense"
-        defaultDate={modalDate}
-        title={modalTitle}
-      />
-      <UnifiedTransactionModal
-        open={isSavingsModalOpen}
-        onOpenChange={(open) => !open && closeAllModals()}
-        type="savings"
-        defaultDate={modalDate}
-        title={modalTitle}
-      />
-      
+  return (
+    <div className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 transition-colors duration-300`}>
+      <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
       <TourAutoStarter />
+      
+      <DashboardContent
+        freeToSpend={freeToSpend}
+        totalIncome={currentBalance} // Show current balance as total income
+        totalExpenses={currentBalance - totalIncome} // Calculate expenses from balance
+        reservedExpenses={reservedExpenses}
+        assignedSavings={assignedToSavings}
+        transactions={convertedTransactions}
+        upcomingEvents={upcomingEvents}
+        goals={goals || []}
+        onAddIncome={() => setShowIncomeDialog(true)}
+        onAddExpense={() => setShowExpenseDialog(true)}
+        onAddSavings={() => setShowSavingsDialog(true)}
+        onSetSalary={() => setShowSalaryModal(true)}
+      />
+
+      <DashboardModals
+        showIncomeDialog={showIncomeDialog}
+        setShowIncomeDialog={setShowIncomeDialog}
+        showExpenseDialog={showExpenseDialog}
+        setShowExpenseDialog={setShowExpenseDialog}
+        showSavingsDialog={showSavingsDialog}
+        setShowSavingsDialog={setShowSavingsDialog}
+        showSalaryModal={showSalaryModal}
+        setShowSalaryModal={setShowSalaryModal}
+        onAddIncome={handleAddIncome}
+        onAddExpense={handleAddExpense}
+      />
     </div>
   );
 };

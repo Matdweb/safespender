@@ -97,9 +97,16 @@ export const useCleanCalendarData = (currentDate: Date) => {
               const monthStart = year === startYear ? startMonth : 0;
               const monthEnd = year === endYear ? endMonth : 11;
               
-            for (let month = monthStart; month <= monthEnd; month++) {
-              // Always schedule savings contributions on the 16th
-              const contributionDate = new Date(year, month, 16);
+              for (let month = monthStart; month <= monthEnd; month++) {
+                const contributionDate = new Date(year, month, 1);
+                
+                if (goal.contribution_frequency === 'monthly') {
+                  contributionDate.setDate(1);
+                } else if (goal.contribution_frequency === 'biweekly') {
+                  contributionDate.setDate(15);
+                } else if (goal.contribution_frequency === 'weekly') {
+                  contributionDate.setDate(7);
+                }
                 
                 if (contributionDate >= startOfRange && contributionDate <= endOfRange) {
                   savingsItems.push({

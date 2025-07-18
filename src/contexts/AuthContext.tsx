@@ -71,32 +71,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        // Return user-friendly error messages
-        if (error.message.includes('Invalid login credentials')) {
-          return { error: 'Incorrect email or password. Please try again.' };
-        }
-        if (error.message.includes('Email not confirmed')) {
-          return { error: 'Please check your email and click the confirmation link before signing in.' };
-        }
-        return { error: error.message };
+    setIsLoading(true);
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    setIsLoading(false);
+    
+    if (error) {
+      // Return user-friendly error messages
+      if (error.message.includes('Invalid login credentials')) {
+        return { error: 'Incorrect email or password. Please try again.' };
       }
-      
-      return {};
-    } catch (error) {
-      console.error('Login error:', error);
-      return { error: 'An unexpected error occurred. Please try again.' };
-    } finally {
-      setIsLoading(false);
+      if (error.message.includes('Email not confirmed')) {
+        return { error: 'Please check your email and click the confirmation link before signing in.' };
+      }
+      return { error: error.message };
     }
+    
+    return {};
   };
 
   const signUp = async (email: string, password: string) => {
@@ -126,23 +121,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = async () => {
-    try {
-      setIsLoading(true);
-      await supabase.auth.signOut();
-      
-      // Clear local state immediately
-      setUser(null);
-      setSession(null);
-      
-      // Clear any cached data
-      localStorage.clear();
-      sessionStorage.clear();
-      
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setIsLoading(false);
   };
 
   return (
