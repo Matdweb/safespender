@@ -81,10 +81,6 @@ const Calendar = () => {
         selectedDate={selectedDate}
         items={selectedDate ? convertedGetItemsForDate(selectedDate) : []}
         onDeleteItem={handleDeleteItem}
-        onAddNew={() => {
-          setShowViewModal(false);
-          // Individual calendar cells now handle their own add actions
-        }}
       />
     </div>
   );

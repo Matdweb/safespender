@@ -2,8 +2,12 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DayData } from '@/types/calendar';
-import { DollarSign, TrendingDown } from 'lucide-react';
+import { DollarSign, TrendingDown, Plus } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import UnifiedTransactionModal from '@/components/modals/UnifiedTransactionModal';
+import { useTransactionModal } from '@/hooks/useTransactionModal';
 
 interface DayCellProps {
   dayData: DayData;
@@ -17,6 +21,19 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
   const { items, netFlow, isToday, isPast } = dayData;
 
   const [isHovered, setIsHovered] = useState(false);
+  const [showAddOptions, setShowAddOptions] = useState(false);
+  
+  const {
+    isIncomeModalOpen,
+    isExpenseModalOpen,
+    isSavingsModalOpen,
+    modalDate,
+    modalTitle,
+    openIncomeModal,
+    openExpenseModal,
+    openSavingsModal,
+    closeAllModals,
+  } = useTransactionModal();
 
   const incomeItems = items.filter(item => item.type === 'income');
   const expenseItems = items.filter(item => item.type === 'expense');
@@ -81,10 +98,64 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
         </div>
       )}
       
-      {/* Hover effect - only on larger screens */}
+      {/* Hover effect with add options - only on larger screens */}
       {isHovered && items.length === 0 && (
         <div className="absolute inset-0 hidden sm:flex items-center justify-center bg-accent/10 rounded-lg">
-          <span className="text-xs text-muted-foreground">Click to add</span>
+          <Popover open={showAddOptions} onOpenChange={setShowAddOptions}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAddOptions(true);
+                }}
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-2" side="top">
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start h-8"
+                  onClick={() => {
+                    openIncomeModal(adjustedDate);
+                    setShowAddOptions(false);
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-2" />
+                  Add Income
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start h-8"
+                  onClick={() => {
+                    openExpenseModal(adjustedDate);
+                    setShowAddOptions(false);
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-2" />
+                  Add Expense
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start h-8"
+                  onClick={() => {
+                    openSavingsModal(adjustedDate);
+                    setShowAddOptions(false);
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-2" />
+                  Add Savings
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
     </div>
@@ -133,6 +204,29 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
           )}
         </div>
       </HoverCardContent>
+      
+      {/* Unified Transaction Modals */}
+      <UnifiedTransactionModal
+        open={isIncomeModalOpen}
+        onOpenChange={(open) => !open && closeAllModals()}
+        type="income"
+        defaultDate={modalDate}
+        title={modalTitle}
+      />
+      <UnifiedTransactionModal
+        open={isExpenseModalOpen}
+        onOpenChange={(open) => !open && closeAllModals()}
+        type="expense"
+        defaultDate={modalDate}
+        title={modalTitle}
+      />
+      <UnifiedTransactionModal
+        open={isSavingsModalOpen}
+        onOpenChange={(open) => !open && closeAllModals()}
+        type="savings"
+        defaultDate={modalDate}
+        title={modalTitle}
+      />
     </HoverCard>
   );
 };
