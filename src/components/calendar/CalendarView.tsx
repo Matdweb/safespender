@@ -20,51 +20,57 @@ const CalendarView = ({ currentDate, items, onDateClick, getItemsForDate }: Cale
 
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
-  const filterSavingsOnlyOn16th = (date: Date, items: CalendarTransaction[]) => {
-    return items.filter(item => {
-      console.log(item);
-      if (item.type === 'savings') {
-        return date.getDate() === 16;
-      }
-      return true; // All non-savings are shown as normal
-    });
-  };
-
-  const buildDayData = (date: Date): DayData => {
-    const rawItems = getItemsForDate(date);
-    const dayItems = filterSavingsOnlyOn16th(date, rawItems);
-    return {
+  // Generate all days for the calendar grid
+  const calendarDays: DayData[] = [];
+  
+  // Previous month's trailing days
+  const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 0);
+  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    const date = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), prevMonth.getDate() - i);
+    const dayItems = getItemsForDate(date);
+    calendarDays.push({
       date,
       items: dayItems,
-      netFlow: dayItems.reduce((sum, item) =>
+      netFlow: dayItems.reduce((sum, item) => 
         sum + (item.type === 'income' ? item.amount : -item.amount), 0
       ),
       isToday: date.toDateString() === today.toDateString(),
       isPast: date < today,
       isFuture: date > today,
-    };
-  };
-
-  const calendarDays: DayData[] = [];
-
-  // Previous month's trailing days
-  const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 0);
-  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-    const date = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), prevMonth.getDate() - i);
-    calendarDays.push(buildDayData(date));
+    });
   }
 
   // Current month days
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    calendarDays.push(buildDayData(date));
+    const dayItems = getItemsForDate(date);
+    calendarDays.push({
+      date,
+      items: dayItems,
+      netFlow: dayItems.reduce((sum, item) => 
+        sum + (item.type === 'income' ? item.amount : -item.amount), 0
+      ),
+      isToday: date.toDateString() === today.toDateString(),
+      isPast: date < today,
+      isFuture: date > today,
+    });
   }
 
   // Next month's leading days
   const remainingCells = 42 - calendarDays.length;
   for (let day = 1; day <= remainingCells; day++) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, day);
-    calendarDays.push(buildDayData(date));
+    const dayItems = getItemsForDate(date);
+    calendarDays.push({
+      date,
+      items: dayItems,
+      netFlow: dayItems.reduce((sum, item) => 
+        sum + (item.type === 'income' ? item.amount : -item.amount), 0
+      ),
+      isToday: date.toDateString() === today.toDateString(),
+      isPast: date < today,
+      isFuture: date > today,
+    });
   }
 
   return (
