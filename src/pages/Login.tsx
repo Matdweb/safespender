@@ -16,9 +16,18 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isSignInLoading, setIsSignInLoading] = useState(false);
+  const [isSignUpLoading, setIsSignUpLoading] = useState(false);
   const [showSignupSuccess, setShowSignupSuccess] = useState(false);
-  const { login, signUp, isLoading } = useAuth();
+  const { login, signUp, isLoading, user } = useAuth();
   const { toast } = useToast();
+
+  // Redirect if user is already authenticated
+  React.useEffect(() => {
+    if (user) {
+      window.location.href = '/';
+    }
+  }, [user]);
 
   // Get the correct redirect URL based on environment
   const getRedirectUrl = () => {
@@ -62,9 +71,15 @@ const Login = () => {
 
     if (!validateForm()) return;
 
+    setIsSignInLoading(true);
     const { error } = await login(email, password);
+    setIsSignInLoading(false);
     
     if (error) {
+      // Clear any previous errors
+      setErrors({});
+      
+      // Show error as toast
       toast({
         title: "Sign in failed",
         description: error,
@@ -75,6 +90,10 @@ const Login = () => {
         title: "Welcome back!",
         description: "You've successfully signed in to SafeSpender",
       });
+      // Clear form
+      setEmail('');
+      setPassword('');
+      setErrors({});
     }
   };
 
@@ -83,9 +102,15 @@ const Login = () => {
 
     if (!validateForm()) return;
 
+    setIsSignUpLoading(true);
     const { error } = await signUp(email, password);
+    setIsSignUpLoading(false);
     
     if (error) {
+      // Clear any previous errors
+      setErrors({});
+      
+      // Show error as toast
       toast({
         title: "Sign up failed",
         description: error,
@@ -95,7 +120,7 @@ const Login = () => {
       setShowSignupSuccess(true);
       toast({
         title: "Registration successful!",
-        description: "Please check your inbox to confirm your email address",
+        description: "Please check your email inbox and spam folder to confirm your account",
       });
     }
   };
@@ -136,18 +161,23 @@ const Login = () => {
         <div className="w-full max-w-md relative z-10">
           <Card className="animate-scale-in bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
             <CardHeader className="text-center space-y-4">
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <CardTitle className="text-xl">Check Your Email</CardTitle>
+              <CardTitle className="text-xl">📬 Check Your Email</CardTitle>
               <CardDescription>
                 We've sent a confirmation link to <strong>{email}</strong>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-center text-sm text-muted-foreground">
-                <p>Click the link in your email to activate your account.</p>
-                <p className="mt-2">Didn't receive the email? Check your spam folder.</p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="text-center text-sm text-blue-700 dark:text-blue-300">
+                  <p className="font-medium mb-2">📧 Please check your email inbox and spam folder</p>
+                  <p>Click the confirmation link in your email to activate your account and start using SafeSpender.</p>
+                </div>
+              </div>
+              <div className="text-center text-xs text-muted-foreground">
+                <p>Didn't receive the email? It may take a few minutes to arrive.</p>
               </div>
               <Button 
                 variant="outline" 
@@ -196,7 +226,7 @@ const Login = () => {
               variant="outline"
               className="w-full transition-all duration-200 hover-lift"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
+              disabled={isGoogleLoading || isSignInLoading || isSignUpLoading || isLoading}
             >
               <Chrome className="mr-2 h-4 w-4" />
               {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
@@ -267,9 +297,9 @@ const Login = () => {
                   <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-primary/90 transition-all duration-200 hover-lift"
-                    disabled={isLoading}
+                    disabled={isSignInLoading || isLoading}
                   >
-                    {isLoading ? 'Signing in...' : 'Sign In'}
+                    {(isSignInLoading || isLoading) ? 'Signing in...' : 'Sign In'}
                   </Button>
                 </form>
               </TabsContent>
@@ -323,9 +353,9 @@ const Login = () => {
                   <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-primary/90 transition-all duration-200 hover-lift"
-                    disabled={isLoading}
+                    disabled={isSignUpLoading || isLoading}
                   >
-                    {isLoading ? 'Creating account...' : 'Create Account'}
+                    {(isSignUpLoading || isLoading) ? 'Creating account...' : 'Create Account'}
                   </Button>
                 </form>
               </TabsContent>

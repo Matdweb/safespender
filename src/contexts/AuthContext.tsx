@@ -87,6 +87,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (error.message.includes('Email not confirmed')) {
         return { error: 'Please check your email and click the confirmation link before signing in.' };
       }
+      if (error.message.includes('Too many requests')) {
+        return { error: 'Too many login attempts. Please wait a few minutes before trying again.' };
+      }
+      if (error.message.includes('Signup requires a valid password')) {
+        return { error: 'Please enter a valid password.' };
+      }
+      if (error.message.includes('Invalid email')) {
+        return { error: 'Please enter a valid email address.' };
+      }
       return { error: error.message };
     }
     
@@ -112,6 +121,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Return user-friendly error messages
       if (error.message.includes('User already registered')) {
         return { error: 'An account with this email already exists. Please sign in instead.' };
+      }
+      if (error.message.includes('Password should be at least 6 characters')) {
+        return { error: 'Password must be at least 6 characters long.' };
+      }
+      if (error.message.includes('Signup requires a valid password')) {
+        return { error: 'Please enter a valid password.' };
+      }
+      if (error.message.includes('Invalid email')) {
+        return { error: 'Please enter a valid email address.' };
+      }
+      if (error.message.includes('Unable to validate email address')) {
+        return { error: 'Please enter a valid email address.' };
       }
       return { error: error.message };
     }
