@@ -1,4 +1,6 @@
 
+@import 'shepherd.js/dist/css/shepherd.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -139,4 +141,59 @@
   .animation-delay-300 {
     animation-delay: 300ms;
   }
+}
+
+/* Shepherd.js Custom Styling */
+.shepherd-element {
+  @apply bg-background border border-border rounded-lg shadow-lg;
+  max-width: 400px;
+}
+
+.shepherd-content {
+  @apply p-4;
+}
+
+.shepherd-header {
+  @apply pb-2;
+}
+
+.shepherd-title {
+  @apply text-lg font-bold text-foreground;
+}
+
+.shepherd-text {
+  @apply text-sm text-muted-foreground leading-relaxed;
+}
+
+.shepherd-footer {
+  @apply pt-4 flex gap-2 justify-end;
+}
+
+.shepherd-button {
+  @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
+}
+
+.shepherd-button-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+}
+
+.shepherd-button-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+}
+
+.shepherd-modal-overlay-container {
+  @apply bg-black/20 backdrop-blur-sm;
+}
+
+.shepherd-target-click-disabled.shepherd-enabled.shepherd-open .shepherd-target {
+  @apply pointer-events-none;
+}
+
+/* Dark mode adjustments */
+.dark .shepherd-element {
+  @apply bg-card border-border;
+}
+
+.dark .shepherd-modal-overlay-container {
+  @apply bg-black/40;
 }

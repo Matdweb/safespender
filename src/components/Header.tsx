@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import UserProfileDropdown from '@/components/UserProfileDropdown';
-import { useFeatureTour } from '@/hooks/useFeatureTour';
+import { useShepherdTour } from '@/hooks/useShepherdTour';
 import { useToast } from '@/hooks/use-toast';
 
 interface HeaderProps {
@@ -18,7 +18,7 @@ const Header = ({ darkMode, toggleDarkMode }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
-  const { startTour, resetTour, hasSeenTour } = useFeatureTour();
+  const { startTour, resetTour, hasSeenTour } = useShepherdTour();
   const { toast } = useToast();
 
   const handleSignOut = async () => {

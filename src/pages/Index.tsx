@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import LoadingScreen from '@/components/LoadingScreen';
-import TourAutoStarter from '@/components/tour/TourAutoStarter';
+import ShepherdTourStarter from '@/components/tour/ShepherdTourStarter';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import DashboardModals from '@/components/dashboard/DashboardModals';
 import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
@@ -76,7 +76,7 @@ const Index = () => {
   return (
     <div className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 transition-colors duration-300`}>
       <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-      <TourAutoStarter />
+      <ShepherdTourStarter />
       
       <DashboardContent
         freeToSpend={freeToSpend}

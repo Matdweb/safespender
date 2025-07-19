@@ -10,7 +10,7 @@ import { useSalary } from '@/hooks/useSalary';
 import { useExpenses, useSavingsGoals } from '@/hooks/useFinancialData';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { toast } from 'sonner';
-import { useFeatureTour } from '@/hooks/useFeatureTour';
+import { useShepherdTour } from '@/hooks/useShepherdTour';
 import { useNavigate } from 'react-router-dom';
 
 interface Props {
@@ -22,7 +22,7 @@ interface Props {
 const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { startTour } = useFeatureTour();
+  const { startTour } = useShepherdTour();
   const createFinancialProfile = useCreateFinancialProfile();
   const updateFinancialProfile = useUpdateFinancialProfile();
   const { data: currentSalary } = useSalary();
@@ -66,11 +66,9 @@ const SummaryStep = ({ data, onNext }: OnboardingStepProps) => {
       // Navigate to dashboard without page reload
       navigate('/', { replace: true });
       
-      // Start tour if requested
+      // Set flag to start tour if requested
       if (startTourAfter) {
-        setTimeout(() => {
-          startTour();
-        }, 1000); // Give time for navigation to complete
+        localStorage.setItem('safespender-start-tour-after-onboarding', 'true');
       }
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);

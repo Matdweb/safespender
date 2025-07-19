@@ -192,7 +192,7 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
                 <span className="font-medium">Last income:</span> {lastSalaryDate.toLocaleDateString()}
               </p>
             )}
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground" data-tour="current-balance">
               <span className="font-medium">Current balance:</span> {formatAmount(currentBalance)}
             </p>
           </div>

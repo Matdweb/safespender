@@ -117,10 +117,10 @@ const DashboardContent = ({
 
       {/* Two Column Layout */}
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }} data-tour="upcoming-events">
+        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }} data-tour="calendar-section">
           <UpcomingEvents events={upcomingEvents} />
         </div>
-        <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+        <div className="animate-slide-up" style={{ animationDelay: '0.3s' }} data-tour="goals-overview">
           <SavingsGoals goals={goals || []} onAddGoal={handleAddGoal} />
         </div>
       </div>

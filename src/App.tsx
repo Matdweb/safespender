@@ -16,7 +16,7 @@ import Landing from "./pages/Landing";
 import Calendar from "./pages/Calendar";
 import Goals from "./pages/Goals";
 import NotFound from "./pages/NotFound";
-import FeatureTour from "@/components/tour/FeatureTour";
+import ShepherdTourStarter from "@/components/tour/ShepherdTourStarter";
 
 const queryClient = new QueryClient();
 
@@ -92,7 +92,7 @@ const AppRoutes = () => {
         />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <FeatureTour />
+      <ShepherdTourStarter />
     </>
   );
 };
