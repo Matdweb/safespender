@@ -4,17 +4,24 @@ import Header from '@/components/Header';
 import CalendarView from '@/components/calendar/CalendarView';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import ViewDayModal from '@/components/calendar/ViewDayModal';
+import AddItemModal from '@/components/calendar/AddItemModal';
 import LoadingScreen from '@/components/LoadingScreen';
 import { CalendarItem } from '@/types/calendar';
 import { useEnhancedCalendar } from '@/hooks/useEnhancedCalendar';
+import { useCreateTransaction, useDeleteTransaction } from '@/hooks/useFinancialData';
+import { useToast } from '@/hooks/use-toast';
 
 const Calendar = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
 
   const { calendarItems, getItemsForDate, isLoading } = useEnhancedCalendar(currentDate);
+  const createTransactionMutation = useCreateTransaction();
+  const deleteTransactionMutation = useDeleteTransaction();
+  const { toast } = useToast();
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -27,14 +34,59 @@ const Calendar = () => {
     
     if (hasItems) {
       setShowViewModal(true);
+    } else {
+      setShowAddModal(true);
     }
     // For empty days, the calendar cells now handle their own add buttons
   };
+  
+  const handleAddItem = async (item: Omit<CalendarItem, 'id'>) => {
+    try {
+      await createTransactionMutation.mutateAsync({
+        type: item.type === 'borrow' ? 'income' : item.type,
+        amount: item.amount,
+        description: item.title,
+        date: item.date,
+        category: item.category || (item.type === 'borrow' ? 'advance' : undefined),
+      });
+      
+      toast({
+        title: "Item Added!",
+        description: `${item.title} has been added to your calendar`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleDeleteItem = async (id: string) => {
-    // The deletion is handled in the ViewDayModal component
-    // We just need to refresh the calendar data, which happens automatically
-    // through the React Query invalidation in the hooks
+    // Only delete if it's not a generated salary transaction
+    if (id.startsWith('salary-') || id.startsWith('savings-')) {
+      toast({
+        title: "Cannot Delete",
+        description: "Generated transactions cannot be deleted directly",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await deleteTransactionMutation.mutateAsync(id);
+      toast({
+        title: "Item Deleted",
+        description: "Transaction has been removed",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive"
+      });
+    }
   };
 
   // Convert CalendarTransactions to CalendarItems for component compatibility
@@ -75,6 +127,14 @@ const Calendar = () => {
         </div>
       </main>
 
+      
+      <AddItemModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        selectedDate={selectedDate}
+        onAddItem={handleAddItem}
+      />
+
       <ViewDayModal
         open={showViewModal}
         onOpenChange={setShowViewModal}
@@ -83,6 +143,7 @@ const Calendar = () => {
         onDeleteItem={handleDeleteItem}
         onAddNew={() => {
           setShowViewModal(false);
+          setShowAddModal(true);
           // Individual calendar cells now handle their own add actions
         }}
       />

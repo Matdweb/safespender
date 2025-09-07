@@ -11,8 +11,8 @@ interface DashboardModalsProps {
   setShowExpenseDialog: (show: boolean) => void;
   showSavingsDialog: boolean;
   setShowSavingsDialog: (show: boolean) => void;
-  showSalaryModal: boolean;
-  setShowSalaryModal: (show: boolean) => void;
+  showSalaryModal?: boolean;
+  setShowSalaryModal?: (show: boolean) => void;
   onAddIncome: (income: any) => Promise<void>;
   onAddExpense: (expense: {
     title: string;
