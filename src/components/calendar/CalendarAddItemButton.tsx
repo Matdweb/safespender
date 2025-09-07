@@ -14,6 +14,7 @@ interface CalendarAddItemButtonProps {
 const CalendarAddItemButton = ({ selectedDate, onItemAdded }: CalendarAddItemButtonProps) => {
   const { toast } = useToast();
   const createTransactionMutation = useCreateTransaction();
+    const { handleAddIncome, handleAddExpense, handleAddSavings } = useDashboardHandlers();
   
   // Modal states
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
@@ -23,64 +24,6 @@ const CalendarAddItemButton = ({ selectedDate, onItemAdded }: CalendarAddItemBut
   
   // Action menu state
   const [showActionMenu, setShowActionMenu] = useState(false);
-
-  // Reuse dashboard handlers but customize for calendar context
-  const { handleAddExpense } = useDashboardHandlers();
-
-  const handleAddIncome = async (income: any) => {
-    try {
-      const targetDate = selectedDate || new Date();
-      const dateStr = targetDate.toISOString().split('T')[0];
-      
-      await createTransactionMutation.mutateAsync({
-        type: 'income',
-        amount: income.amount,
-        description: income.description,
-        date: dateStr
-      });
-      
-      toast({
-        title: "Income Added!",
-        description: `$${income.amount.toLocaleString()} added for ${targetDate.toLocaleDateString()}`,
-      });
-      
-      onItemAdded?.();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add income",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleAddSavings = async (savings: { goalId: string; amount: number; description: string }) => {
-    try {
-      const targetDate = selectedDate || new Date();
-      const dateStr = targetDate.toISOString().split('T')[0];
-      
-      await createTransactionMutation.mutateAsync({
-        type: 'savings',
-        amount: savings.amount,
-        description: savings.description,
-        date: dateStr,
-        goal_id: savings.goalId,
-      });
-      
-      toast({
-        title: "Savings Added!",
-        description: `$${savings.amount.toLocaleString()} added for ${targetDate.toLocaleDateString()}`,
-      });
-      
-      onItemAdded?.();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add savings",
-        variant: "destructive"
-      });
-    }
-  };
 
   const openIncomeDialog = () => {
     setShowActionMenu(false);
