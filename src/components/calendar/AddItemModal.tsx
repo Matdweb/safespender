@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CalendarItem } from '@/types/calendar';
 import { Calendar as CalendarIcon, Plus, PiggyBank, TrendingUp } from 'lucide-react';
-import { useExpenseManager } from '@/hooks/useExpenseManager';
 import { Card } from '../ui/card';
 import DashboardModals from '../dashboard/DashboardModals';
 import { useDashboardHandlers } from '@/hooks/useDashboardHandlers';
@@ -20,7 +19,6 @@ const AddItemModal = ({ open, onOpenChange, selectedDate }: AddItemModalProps) =
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
   const [showSavingsDialog, setShowSavingsDialog] = useState(false);
   
-  const { addExpense } = useExpenseManager();
   const { handleAddIncome, handleAddExpense, handleAddSavings } = useDashboardHandlers();
 
   const onAddIncome = () => {
@@ -36,7 +34,7 @@ const AddItemModal = ({ open, onOpenChange, selectedDate }: AddItemModalProps) =
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg w-full px-4 py-6 sm:px-6 sm:py-8">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg w-full max-w-72 px-4 py-6 sm:px-6 sm:py-8">
         <DialogHeader>
           <DialogTitle>
             📊 Add Financial Item

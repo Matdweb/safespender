@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DayData } from '@/types/calendar';
-import { DollarSign, TrendingDown } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 interface DayCellProps {
@@ -83,7 +82,7 @@ const DayCell = ({ dayData, onClick, isCurrentMonth }: DayCellProps) => {
 
       {/* Show add button on mobile/touch for empty days */}
       {items.length === 0 && isCurrentMonth && (
-        <div className="absolute inset-0 flex items-center justify-center bg-accent/10 rounded-lg sm:hidden touch-manipulation">
+        <div className="absolute inset-0 hidden items-center justify-center bg-accent/10 rounded-lg sm:flex sm:opacity-0 hover:opacity-1 touch-manipulation">
           <span className="text-xs text-muted-foreground">Tap to add</span>
         </div>
       )}
