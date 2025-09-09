@@ -171,15 +171,6 @@ const FreeToSpendCard = ({ amount, balance, reservedExpenses, assignedSavings }:
                 </div>
                 <span className="font-bold text-blue-600 text-lg">-{formatAmount(accurateAssignedSavings)}</span>
               </div>
-
-              <div className="border-t border-dashed border-border pt-3">
-                <div className="flex justify-between items-center p-4 rounded-xl bg-primary/5 border-2 border-primary/20">
-                  <span className="font-bold text-lg">Free to Spend</span>
-                  <span className={`font-black text-2xl ${freeToSpend >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                    {formatAmount(freeToSpend)}
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

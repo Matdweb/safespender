@@ -9,6 +9,7 @@ import { useFinancialDashboard } from '@/hooks/useFinancialDashboard';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { PiggyBank } from 'lucide-react';
+import { useAccurateFreeToSpend } from '@/hooks/useAccurateFreeToSpend';
 
 interface ExtraContributionDialogProps {
   open: boolean;
@@ -21,7 +22,9 @@ const ExtraContributionDialog = ({ open, onOpenChange }: ExtraContributionDialog
   const [description, setDescription] = useState('');
 
   const { data: goals } = useSavingsGoals();
-  const { freeToSpend, currency } = useFinancialDashboard();
+  // TODO: Use centralized financial data hook
+  const { currency } = useFinancialDashboard();
+  const { freeToSpend } = useAccurateFreeToSpend()
   const createTransactionMutation = useCreateTransaction();
   const updateSavingsGoalMutation = useUpdateSavingsGoal();
   const { toast } = useToast();

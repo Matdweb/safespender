@@ -45,38 +45,36 @@ export const useAccurateFreeToSpend = (): AccurateFreeToSpendCalculations => {
     today.setHours(23, 59, 59, 999); // End of today for comparisons
 
     // Step 1: Get Income Until Today (from financial profile start date)
-    let totalIncome = 0;
-    let lastSalaryDate: Date | null = null;
-    
-    const startDate = new Date(profile.start_date + 'T00:00:00');
+let totalIncome = 0;
+let lastSalaryDate: Date | null = null;
 
-    // From salary table - get all paycheck dates from start_date until today
-    if (salary && salary.paychecks && salary.pay_dates) {
-      const avgPaycheck = salary.paychecks.reduce((sum, amount) => sum + amount, 0) / salary.paychecks.length;
-      
-      // Start from the profile start date, not beginning of year
-      let checkDate = new Date(startDate);
-      
-      while (checkDate <= today) {
-        for (const payDate of salary.pay_dates) {
-          const salaryDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), payDate);
-          
-          if (salaryDate >= startDate && salaryDate <= today) {
-            totalIncome += avgPaycheck;
-            
-            // Track the most recent salary date
-            if (!lastSalaryDate || salaryDate > lastSalaryDate) {
-              lastSalaryDate = salaryDate;
-            }
-          }
+const startDate = new Date(profile.start_date + 'T00:00:00');
+
+// From salary table - get all paycheck dates from start_date until today
+if (salary && Array.isArray(salary.paychecks) && Array.isArray(salary.pay_dates)) {
+  let checkDate = new Date(startDate);
+  let paycheckIndex = 0;
+
+  while (checkDate <= today) {
+    for (const payDate of salary.pay_dates) {
+      const salaryDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), payDate);
+
+      if (salaryDate >= startDate && salaryDate <= today && paycheckIndex < salary.paychecks.length) {
+        totalIncome += salary.paychecks[paycheckIndex];
+
+        // Track the most recent salary date
+        if (!lastSalaryDate || salaryDate > lastSalaryDate) {
+          lastSalaryDate = salaryDate;
         }
-        
-        // Move to next month
-        checkDate.setMonth(checkDate.getMonth() + 1);
-        checkDate.setDate(1);
+
+        paycheckIndex++;
       }
     }
-
+    // Move to next month
+    checkDate.setMonth(checkDate.getMonth() + 1);
+    checkDate.setDate(1);
+  }
+}
     // From transactions table - get all one-time incomes with date <= today
     const oneTimeIncomes = transactions.filter(t => 
       t.type === 'income' && 
@@ -152,35 +150,12 @@ export const useAccurateFreeToSpend = (): AccurateFreeToSpendCalculations => {
       reservedForBills += programmedExpenseTotal;
     }
 
-    // Step 4: Get Savings Contributions
-    let assignedToSavings = 0;
-    
-    if (lastSalaryDate && goals) {
-      // Check if 16th has passed since last salary
-      const today16th = new Date(today.getFullYear(), today.getMonth(), 16);
-      
-      if (today >= today16th && today16th >= lastSalaryDate) {
-        // Include programmed savings contributions
-        assignedToSavings = goals.reduce((sum, goal) => {
-          const contribution = parseFloat(goal.recurring_contribution?.toString() || '0');
-          return sum + contribution;
-        }, 0);
-      }
-    }
-
-    // Calculate current balance (all income - all expenses, regardless of savings)
-    const allExpenses = transactions
-      .filter(t => t.type === 'expense' && new Date(t.date + 'T00:00:00') <= today)
-      .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
-    
-    const currentBalance = totalIncome - allExpenses;
-
-    // Step 5: Final Formula
-    const freeToSpend = Math.max(0, totalIncome - reservedForBills - assignedToSavings);
-
     // Calculate next income
     let nextIncomeAmount = 0;
     let nextIncomeDate: Date | null = null;
+
+    // Step 4: Get Savings Contributions
+    let assignedToSavings = 0;
     
     if (salary && salary.paychecks && salary.pay_dates) {
       const avgPaycheck = salary.paychecks.reduce((sum, amount) => sum + amount, 0) / salary.paychecks.length;
@@ -206,6 +181,35 @@ export const useAccurateFreeToSpend = (): AccurateFreeToSpendCalculations => {
         nextIncomeDate = new Date(nextYear, nextMonth, salary.pay_dates[0]);
       }
     }
+
+    if (lastSalaryDate && nextIncomeDate && goals) {
+  // 1. Sum all extra contributions (from transactions) in the current pay period
+  const extraContributions = transactions
+    .filter(t =>
+      t.type === 'savings' &&
+      new Date(t.date + 'T00:00:00') >= lastSalaryDate &&
+      new Date(t.date + 'T00:00:00') < nextIncomeDate
+    )
+    .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+
+  // 2. Sum programmed contributions (only if 16th falls within the pay period)
+    let programmedContributions = 0;
+    const sixteenth = new Date(today.getFullYear(), today.getMonth(), 16);
+    if (sixteenth >= lastSalaryDate && sixteenth < nextIncomeDate) {
+      programmedContributions = goals.reduce(
+        (sum, goal) => sum + (goal.recurring_contribution || 0),
+        0
+      );
+  }
+  assignedToSavings = programmedContributions + extraContributions;
+}
+    // Calculate current balance (all income - all expenses, regardless of savings)
+    const allExpenses = transactions
+      .filter(t => t.type === 'expense' && new Date(t.date + 'T00:00:00') <= today)
+      .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+    const currentBalance = totalIncome - allExpenses;
+        // Step 5: Final Formula
+    const freeToSpend = Math.max(0, totalIncome - reservedForBills - assignedToSavings);
 
     setCalculations({
       totalIncome,

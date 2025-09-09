@@ -207,7 +207,7 @@ const SetSalaryModal = ({ open, onOpenChange }: SetSalaryModalProps) => {
                     placeholder="Day of month (1-31)"
                     min="1"
                     max="31"
-                    className={errors[`payDate-${index}`] ? 'border-destructive' : ''}
+                    className={(errors[`payDate-${index}`] ? 'border-destructive' : '') + ' w-40'}
                   />
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
