@@ -28,6 +28,7 @@ const Index = () => {
 
   const {
     transactions,
+    expenses,
     goals,
     salary,
     totalIncome,
@@ -63,15 +64,26 @@ const Index = () => {
   }
 
   // Convert database transactions to component format
-  const convertedTransactions: Transaction[] = transactions ? transactions.map(t => ({
-    id: t.id,
-    type: t.type as 'income' | 'expense' | 'savings',
-    amount: t.amount,
-    description: t.description,
-    date: t.date,
-    category: t.category || undefined,
-    created_at: t.created_at
-  })) : [];
+  const convertedTransactions: Transaction[] = [
+    ...(transactions ? transactions.map(t => ({
+      id: t.id,
+      type: t.type as 'income' | 'expense' | 'savings',
+      amount: t.amount,
+      description: t.description,
+      date: t.date,
+      category: t.category || undefined,
+      created_at: t.created_at
+    })) : []),
+    ...(expenses ? expenses.map(e => ({
+      id: e.id,
+      type: 'expense' as 'expense',
+      amount: e.amount,
+      description: e.description,
+      date: e.next_occurrence_date?.split('T')[0] || e.created_at.split('T')[0],
+      category: e.category || undefined,
+      created_at: e.created_at
+    })) : [])
+  ];
 
   return (
     <div className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 transition-colors duration-300`}>
