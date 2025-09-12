@@ -89,67 +89,6 @@ if (salary && Array.isArray(salary.paychecks) && Array.isArray(salary.pay_dates)
 
     // Step 2: Last Programmed Salary Date is already calculated above
 
-    // Step 3: Get Expenses After Last Income
-    let reservedForBills = 0;
-    
-    if (lastSalaryDate) {
-      // Get expenses between last salary date and today
-      const expensesAfterLastSalary = transactions.filter(t => 
-        t.type === 'expense' && 
-        new Date(t.date + 'T00:00:00') >= lastSalaryDate! &&
-        new Date(t.date + 'T00:00:00') <= today
-      );
-      
-      reservedForBills = expensesAfterLastSalary.reduce((sum, t) => 
-        sum + parseFloat(t.amount.toString()), 0
-      );
-
-      // Add programmed expenses that should have occurred
-      const programmedExpenses = expenses.filter(expense => {
-        if (!expense.is_recurring || !expense.day_of_month) return false;
-        
-        // Check if this programmed expense should have occurred between last salary and today
-        const expenseDay = expense.day_of_month;
-        let checkDate = new Date(lastSalaryDate!);
-        
-        while (checkDate <= today) {
-          const expenseDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), expenseDay);
-          
-          if (expenseDate >= lastSalaryDate! && expenseDate <= today) {
-            return true;
-          }
-          
-          // Move to next month
-          checkDate.setMonth(checkDate.getMonth() + 1);
-          checkDate.setDate(1);
-        }
-        
-        return false;
-      });
-
-      const programmedExpenseTotal = programmedExpenses.reduce((sum, expense) => {
-        // Count how many times this expense occurred between last salary and today
-        const expenseDay = expense.day_of_month!;
-        let checkDate = new Date(lastSalaryDate!);
-        let occurrences = 0;
-        
-        while (checkDate <= today) {
-          const expenseDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), expenseDay);
-          
-          if (expenseDate >= lastSalaryDate! && expenseDate <= today) {
-            occurrences++;
-          }
-          
-          checkDate.setMonth(checkDate.getMonth() + 1);
-          checkDate.setDate(1);
-        }
-        
-        return sum + (expense.amount * occurrences);
-      }, 0);
-
-      reservedForBills += programmedExpenseTotal;
-    }
-
     // Calculate next income
     let nextIncomeAmount = 0;
     let nextIncomeDate: Date | null = null;
@@ -208,6 +147,67 @@ if (salary && Array.isArray(salary.paychecks) && Array.isArray(salary.pay_dates)
       .filter(t => t.type === 'expense' && new Date(t.date + 'T00:00:00') <= today)
       .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
     const currentBalance = totalIncome - allExpenses;
+
+ // Step 3: Get Expenses After Last Income
+    let reservedForBills = 0;
+    
+    if (lastSalaryDate) {
+      // Get expenses between last salary date and today
+      const expensesAfterLastSalary = transactions.filter(t => 
+        t.type === 'expense' && 
+        new Date(t.date + 'T00:00:00') >= lastSalaryDate! &&
+        new Date(t.date + 'T00:00:00') <= today
+      );
+      
+      reservedForBills = expensesAfterLastSalary.reduce((sum, t) => 
+        sum + parseFloat(t.amount.toString()), 0
+      );
+
+      // console.log("before expenses table", reservedForBills);
+      // Filter expenses between lastSalaryDate and nextIncomeDate
+      const filteredExpenses = expenses.filter(expense => {
+        const expenseCreatedDate = new Date(expense.created_at.split('T')[0] + 'T00:00:00');
+        // If not recurring, include if created_date is in range
+        if (!expense.is_recurring) {
+          return expenseCreatedDate >= lastSalaryDate! && expenseCreatedDate < nextIncomeDate!;
+        }
+        // If recurring, include if day_of_month falls in range
+        if (expense.is_recurring && expense.day_of_month != null) {
+          // Check for each month in the range
+          let checkDate = new Date(lastSalaryDate!);
+          while (checkDate < nextIncomeDate!) {
+        const recurringExpenseDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), expense.day_of_month);
+        if (recurringExpenseDate >= lastSalaryDate! && recurringExpenseDate < nextIncomeDate!) {
+          return true;
+        }
+        checkDate.setMonth(checkDate.getMonth() + 1);
+        checkDate.setDate(1);
+          }
+        }
+        return false;
+      });
+      // Sum up the amounts, counting recurring expenses for each occurrence in the range
+      const reservedForBillsTotal = filteredExpenses.reduce((sum, expense) => {
+        if (!expense.is_recurring) {
+          return sum + expense.amount;
+        }
+        // For recurring, count occurrences in the range
+        let occurrences = 0;
+        let checkDate = new Date(lastSalaryDate!);
+        while (checkDate < nextIncomeDate!) {
+          const recurringExpenseDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), expense.day_of_month);
+          if (recurringExpenseDate >= lastSalaryDate! && recurringExpenseDate < nextIncomeDate!) {
+        occurrences++;
+          }
+          checkDate.setMonth(checkDate.getMonth() + 1);
+          checkDate.setDate(1);
+        }
+        return sum + (expense.amount * occurrences);
+      }, 0);
+
+      reservedForBills += reservedForBillsTotal;
+    }
+
         // Step 5: Final Formula
     const freeToSpend = Math.max(0, totalIncome - reservedForBills - assignedToSavings);
 
